@@ -1,0 +1,25 @@
+.env
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Go
+bin/
+dist/
+vendor/
+*.exe
+*.test
+coverage.out
+api/server
+
+# Flutter
+mobile/.dart_tool/
+mobile/.packages
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/**/Generated.xcconfig
+mobile/**/flutter_export_environment.sh
+*.iml
+.pub-cache/

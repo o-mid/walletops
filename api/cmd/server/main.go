@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/omid/walletops/api/internal/auth"
 	"github.com/omid/walletops/api/internal/config"
 	"github.com/omid/walletops/api/internal/db"
 	"github.com/omid/walletops/api/internal/httpapi"
@@ -46,8 +47,19 @@ func main() {
 	}
 	log.Info("migrations applied")
 
+	store := auth.NewStore(pool)
+	tokens := auth.NewTokenIssuer(cfg.JWTSecret)
+	authHandler := auth.NewHandler(store, tokens)
+	requireAuth := auth.RequireAuth(tokens, func(w http.ResponseWriter, code, msg string) {
+		httpapi.WriteError(w, http.StatusUnauthorized, code, msg)
+	})
+
 	mux := http.NewServeMux()
 	mux.Handle("GET /v1/health", httpapi.HealthHandler{Pool: pool})
+	mux.HandleFunc("POST /v1/auth/register", authHandler.Register)
+	mux.HandleFunc("POST /v1/auth/login", authHandler.Login)
+	mux.HandleFunc("POST /v1/auth/refresh", authHandler.Refresh)
+	mux.Handle("GET /v1/me", requireAuth(http.HandlerFunc(authHandler.Me)))
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,

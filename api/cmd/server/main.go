@@ -16,6 +16,7 @@ import (
 	"github.com/omid/walletops/api/internal/config"
 	"github.com/omid/walletops/api/internal/db"
 	"github.com/omid/walletops/api/internal/httpapi"
+	"github.com/omid/walletops/api/internal/rules"
 )
 
 func main() {
@@ -47,9 +48,10 @@ func main() {
 	}
 	log.Info("migrations applied")
 
-	store := auth.NewStore(pool)
+	authStore := auth.NewStore(pool)
 	tokens := auth.NewTokenIssuer(cfg.JWTSecret)
-	authHandler := auth.NewHandler(store, tokens)
+	authHandler := auth.NewHandler(authStore, tokens)
+	rulesHandler := rules.NewHandler(rules.NewStore(pool))
 	requireAuth := auth.RequireAuth(tokens, func(w http.ResponseWriter, code, msg string) {
 		httpapi.WriteError(w, http.StatusUnauthorized, code, msg)
 	})
@@ -60,6 +62,12 @@ func main() {
 	mux.HandleFunc("POST /v1/auth/login", authHandler.Login)
 	mux.HandleFunc("POST /v1/auth/refresh", authHandler.Refresh)
 	mux.Handle("GET /v1/me", requireAuth(http.HandlerFunc(authHandler.Me)))
+	mux.Handle("GET /v1/alert-rules", requireAuth(http.HandlerFunc(rulesHandler.List)))
+	mux.Handle("POST /v1/alert-rules", requireAuth(http.HandlerFunc(rulesHandler.Create)))
+	mux.Handle("GET /v1/alert-rules/{id}", requireAuth(http.HandlerFunc(rulesHandler.Get)))
+	mux.Handle("PATCH /v1/alert-rules/{id}", requireAuth(http.HandlerFunc(rulesHandler.Patch)))
+	mux.Handle("DELETE /v1/alert-rules/{id}", requireAuth(http.HandlerFunc(rulesHandler.Delete)))
+
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,

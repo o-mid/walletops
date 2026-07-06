@@ -15,8 +15,10 @@ import (
 	"github.com/omid/walletops/api/internal/auth"
 	"github.com/omid/walletops/api/internal/config"
 	"github.com/omid/walletops/api/internal/db"
+	"github.com/omid/walletops/api/internal/events"
 	"github.com/omid/walletops/api/internal/httpapi"
 	"github.com/omid/walletops/api/internal/rules"
+	"github.com/omid/walletops/api/internal/webhook"
 )
 
 func main() {
@@ -52,6 +54,9 @@ func main() {
 	tokens := auth.NewTokenIssuer(cfg.JWTSecret)
 	authHandler := auth.NewHandler(authStore, tokens)
 	rulesHandler := rules.NewHandler(rules.NewStore(pool))
+	eventStore := events.NewStore(pool)
+	eventsHandler := events.NewHandler(eventStore)
+	webhookHandler := webhook.NewHandler(eventStore, cfg.WebhookSecret)
 	requireAuth := auth.RequireAuth(tokens, func(w http.ResponseWriter, code, msg string) {
 		httpapi.WriteError(w, http.StatusUnauthorized, code, msg)
 	})
@@ -67,6 +72,10 @@ func main() {
 	mux.Handle("GET /v1/alert-rules/{id}", requireAuth(http.HandlerFunc(rulesHandler.Get)))
 	mux.Handle("PATCH /v1/alert-rules/{id}", requireAuth(http.HandlerFunc(rulesHandler.Patch)))
 	mux.Handle("DELETE /v1/alert-rules/{id}", requireAuth(http.HandlerFunc(rulesHandler.Delete)))
+	mux.HandleFunc("POST /v1/webhooks/events", webhookHandler.Ingest)
+	mux.Handle("GET /v1/events", requireAuth(http.HandlerFunc(eventsHandler.List)))
+	mux.Handle("GET /v1/events/{id}", requireAuth(http.HandlerFunc(eventsHandler.Get)))
+
 
 
 	srv := &http.Server{

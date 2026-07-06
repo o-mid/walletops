@@ -17,3 +17,12 @@ curl -s http://localhost:8080/v1/health
 ```
 
 Env vars are listed in `.env.example`. Module path under `api/` is a placeholder — change before publishing.
+
+## Webhooks
+
+`POST /v1/webhooks/events` expects header `X-Signature: sha256=<hex>` — HMAC-SHA256 of the raw body using `WEBHOOK_SECRET`. Map partner `user_ref` values to users via `users.user_ref` (see `scripts/seed_webhooks.sh`).
+
+```bash
+./scripts/seed_webhooks.sh
+```
+

@@ -1,22 +1,27 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type HealthHandler struct {
-	Pool *pgxpool.Pool
+	Pool           *pgxpool.Pool
+	WorkerSnapshot func() any
 }
 
 func (h HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	if err := h.Pool.Ping(r.Context()); err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "unavailable"})
+		WriteJSON(w, http.StatusServiceUnavailable, map[string]any{
+			"status": "unavailable",
+		})
 		return
 	}
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+
+	body := map[string]any{"status": "ok"}
+	if h.WorkerSnapshot != nil {
+		body["worker"] = h.WorkerSnapshot()
+	}
+	WriteJSON(w, http.StatusOK, body)
 }

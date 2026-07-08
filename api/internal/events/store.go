@@ -180,3 +180,118 @@ func (s *Store) GetForUser(ctx context.Context, userID, id string) (Event, error
 	}
 	return e, nil
 }
+
+func (s *Store) GetByID(ctx context.Context, id string) (Event, error) {
+	var e Event
+	err := s.pool.QueryRow(ctx, `
+		SELECT id::text, user_id::text, idempotency_key, type, payload, status,
+		       attempt_count, last_error, matched_rule_id::text, received_at, processed_at
+		FROM events
+		WHERE id = $1
+	`, id).Scan(
+		&e.ID, &e.UserID, &e.IdempotencyKey, &e.Type, &e.Payload, &e.Status,
+		&e.AttemptCount, &e.LastError, &e.MatchedRuleID, &e.ReceivedAt, &e.ProcessedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
+	if err != nil {
+		return Event{}, fmt.Errorf("get event by id: %w", err)
+	}
+	return e, nil
+}
+
+func (s *Store) ClaimNext(ctx context.Context, maxAttempts int) (Event, error) {
+	var e Event
+	err := s.pool.QueryRow(ctx, `
+		UPDATE events
+		SET status = 'processing'
+		WHERE id = (
+			SELECT id FROM events
+			WHERE status = 'pending'
+			   OR (
+			        status = 'failed'
+			        AND attempt_count < $1
+			        AND COALESCE(processed_at, received_at) <= now() - make_interval(secs => LEAST(60, GREATEST(2, attempt_count * 2)))
+			   )
+			ORDER BY received_at ASC
+			LIMIT 1
+			FOR UPDATE SKIP LOCKED
+		)
+		RETURNING id::text, user_id::text, idempotency_key, type, payload, status,
+		          attempt_count, last_error, matched_rule_id::text, received_at, processed_at
+	`, maxAttempts).Scan(
+		&e.ID, &e.UserID, &e.IdempotencyKey, &e.Type, &e.Payload, &e.Status,
+		&e.AttemptCount, &e.LastError, &e.MatchedRuleID, &e.ReceivedAt, &e.ProcessedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
+	if err != nil {
+		return Event{}, fmt.Errorf("claim event: %w", err)
+	}
+	return e, nil
+}
+
+func (s *Store) ClaimByID(ctx context.Context, id string) (Event, error) {
+	var e Event
+	err := s.pool.QueryRow(ctx, `
+		UPDATE events
+		SET status = 'processing'
+		WHERE id = $1 AND status IN ('pending', 'failed')
+		RETURNING id::text, user_id::text, idempotency_key, type, payload, status,
+		          attempt_count, last_error, matched_rule_id::text, received_at, processed_at
+	`, id).Scan(
+		&e.ID, &e.UserID, &e.IdempotencyKey, &e.Type, &e.Payload, &e.Status,
+		&e.AttemptCount, &e.LastError, &e.MatchedRuleID, &e.ReceivedAt, &e.ProcessedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
+	if err != nil {
+		return Event{}, fmt.Errorf("claim event by id: %w", err)
+	}
+	return e, nil
+}
+
+func (s *Store) MarkProcessed(ctx context.Context, id string, matchedRuleID *string) error {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE events
+		SET status = 'processed',
+		    matched_rule_id = $2,
+		    processed_at = now(),
+		    last_error = NULL
+		WHERE id = $1 AND status = 'processing'
+	`, id, matchedRuleID)
+	if err != nil {
+		return fmt.Errorf("mark processed: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Store) MarkAttemptFailed(ctx context.Context, id, lastError string) (Event, error) {
+	var e Event
+	err := s.pool.QueryRow(ctx, `
+		UPDATE events
+		SET attempt_count = attempt_count + 1,
+		    last_error = $2,
+		    status = 'failed',
+		    processed_at = now()
+		WHERE id = $1 AND status = 'processing'
+		RETURNING id::text, user_id::text, idempotency_key, type, payload, status,
+		          attempt_count, last_error, matched_rule_id::text, received_at, processed_at
+	`, id, lastError).Scan(
+		&e.ID, &e.UserID, &e.IdempotencyKey, &e.Type, &e.Payload, &e.Status,
+		&e.AttemptCount, &e.LastError, &e.MatchedRuleID, &e.ReceivedAt, &e.ProcessedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Event{}, ErrNotFound
+	}
+	if err != nil {
+		return Event{}, fmt.Errorf("mark attempt failed: %w", err)
+	}
+	return e, nil
+}

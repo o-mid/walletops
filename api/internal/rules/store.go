@@ -43,6 +43,29 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
+func (s *Store) EnabledByUserAndType(ctx context.Context, userID, eventType string) ([]Rule, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id::text, user_id::text, name, event_type, threshold, enabled, created_at, updated_at
+		FROM alert_rules
+		WHERE user_id = $1 AND event_type = $2 AND enabled = true
+		ORDER BY created_at ASC
+	`, userID, eventType)
+	if err != nil {
+		return nil, fmt.Errorf("list matching rules: %w", err)
+	}
+	defer rows.Close()
+
+	out := make([]Rule, 0)
+	for rows.Next() {
+		var r Rule
+		if err := rows.Scan(&r.ID, &r.UserID, &r.Name, &r.EventType, &r.Threshold, &r.Enabled, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan rule: %w", err)
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) Create(ctx context.Context, userID string, in CreateInput) (Rule, error) {
 	var r Rule
 	err := s.pool.QueryRow(ctx, `

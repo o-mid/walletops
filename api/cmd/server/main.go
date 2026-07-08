@@ -19,6 +19,7 @@ import (
 	"github.com/omid/walletops/api/internal/httpapi"
 	"github.com/omid/walletops/api/internal/rules"
 	"github.com/omid/walletops/api/internal/webhook"
+	"github.com/omid/walletops/api/internal/worker"
 )
 
 func main() {
@@ -53,16 +54,26 @@ func main() {
 	authStore := auth.NewStore(pool)
 	tokens := auth.NewTokenIssuer(cfg.JWTSecret)
 	authHandler := auth.NewHandler(authStore, tokens)
-	rulesHandler := rules.NewHandler(rules.NewStore(pool))
+	rulesStore := rules.NewStore(pool)
+	rulesHandler := rules.NewHandler(rulesStore)
 	eventStore := events.NewStore(pool)
 	eventsHandler := events.NewHandler(eventStore)
 	webhookHandler := webhook.NewHandler(eventStore, cfg.WebhookSecret)
+	wrk := worker.New(eventStore, rulesStore, log)
+	go wrk.Run(ctx)
 	requireAuth := auth.RequireAuth(tokens, func(w http.ResponseWriter, code, msg string) {
 		httpapi.WriteError(w, http.StatusUnauthorized, code, msg)
 	})
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /v1/health", httpapi.HealthHandler{Pool: pool})
+	mux.Handle("GET /v1/health", httpapi.HealthHandler{
+		Pool: pool,
+		WorkerSnapshot: func() any {
+			return wrk.Stats.Snapshot()
+		},
+	})
+
+
 	mux.HandleFunc("POST /v1/auth/register", authHandler.Register)
 	mux.HandleFunc("POST /v1/auth/login", authHandler.Login)
 	mux.HandleFunc("POST /v1/auth/refresh", authHandler.Refresh)

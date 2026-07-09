@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/omid/walletops/api/internal/ai"
 	"github.com/omid/walletops/api/internal/auth"
 	"github.com/omid/walletops/api/internal/config"
 	"github.com/omid/walletops/api/internal/db"
@@ -59,11 +60,18 @@ func main() {
 	eventStore := events.NewStore(pool)
 	eventsHandler := events.NewHandler(eventStore)
 	webhookHandler := webhook.NewHandler(eventStore, cfg.WebhookSecret)
+	aiProvider, err := ai.NewProvider(cfg)
+	if err != nil {
+		log.Error("ai provider", "err", err)
+		os.Exit(1)
+	}
+	aiHandler := ai.NewHandler(eventStore, rulesStore, ai.NewStore(pool), aiProvider)
 	wrk := worker.New(eventStore, rulesStore, log)
 	go wrk.Run(ctx)
 	requireAuth := auth.RequireAuth(tokens, func(w http.ResponseWriter, code, msg string) {
 		httpapi.WriteError(w, http.StatusUnauthorized, code, msg)
 	})
+
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /v1/health", httpapi.HealthHandler{
@@ -86,6 +94,8 @@ func main() {
 	mux.HandleFunc("POST /v1/webhooks/events", webhookHandler.Ingest)
 	mux.Handle("GET /v1/events", requireAuth(http.HandlerFunc(eventsHandler.List)))
 	mux.Handle("GET /v1/events/{id}", requireAuth(http.HandlerFunc(eventsHandler.Get)))
+	mux.Handle("POST /v1/ai/summarize", requireAuth(http.HandlerFunc(aiHandler.Summarize)))
+
 
 
 

@@ -12,6 +12,7 @@ type Config struct {
 	WebhookSecret string
 	AIProvider    string
 	AIAPIKey      string
+	AIBaseURL     string
 	HTTPAddr      string
 }
 
@@ -22,6 +23,7 @@ func Load() (Config, error) {
 		WebhookSecret: os.Getenv("WEBHOOK_SECRET"),
 		AIProvider:    getenv("AI_PROVIDER", "mock"),
 		AIAPIKey:      os.Getenv("AI_API_KEY"),
+		AIBaseURL:     os.Getenv("AI_BASE_URL"),
 		HTTPAddr:      getenv("HTTP_ADDR", ":8080"),
 	}
 

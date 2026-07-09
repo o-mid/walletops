@@ -161,6 +161,35 @@ func (s *Store) ListForUser(ctx context.Context, userID, status string) ([]Event
 	return out, rows.Err()
 }
 
+func (s *Store) GetForUserIDs(ctx context.Context, userID string, ids []string) (map[string]Event, error) {
+	if len(ids) == 0 {
+		return map[string]Event{}, nil
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT id::text, user_id::text, idempotency_key, type, payload, status,
+		       attempt_count, last_error, matched_rule_id::text, received_at, processed_at
+		FROM events
+		WHERE user_id = $1 AND id = ANY($2::uuid[])
+	`, userID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get events by ids: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[string]Event, len(ids))
+	for rows.Next() {
+		var e Event
+		if err := rows.Scan(
+			&e.ID, &e.UserID, &e.IdempotencyKey, &e.Type, &e.Payload, &e.Status,
+			&e.AttemptCount, &e.LastError, &e.MatchedRuleID, &e.ReceivedAt, &e.ProcessedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan event: %w", err)
+		}
+		out[e.ID] = e
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) GetForUser(ctx context.Context, userID, id string) (Event, error) {
 	var e Event
 	err := s.pool.QueryRow(ctx, `

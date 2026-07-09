@@ -43,6 +43,28 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
+func (s *Store) NamesByIDs(ctx context.Context, ids []string) (map[string]string, error) {
+	out := make(map[string]string)
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT id::text, name FROM alert_rules WHERE id = ANY($1::uuid[])
+	`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("rule names: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, fmt.Errorf("scan rule name: %w", err)
+		}
+		out[id] = name
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) EnabledByUserAndType(ctx context.Context, userID, eventType string) ([]Rule, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id::text, user_id::text, name, event_type, threshold, enabled, created_at, updated_at

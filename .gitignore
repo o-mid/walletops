@@ -19,6 +19,8 @@ mobile/.packages
 mobile/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
+.fvm/
+mobile/.fvm/
 mobile/**/Generated.xcconfig
 mobile/**/flutter_export_environment.sh
 *.iml

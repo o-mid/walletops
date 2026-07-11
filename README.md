@@ -26,3 +26,18 @@ Env vars are listed in `.env.example`. Module path under `api/` is a placeholder
 ./scripts/seed_webhooks.sh
 ```
 
+## Mobile
+
+```bash
+cd mobile
+flutter pub get
+# iOS simulator / desktop:
+flutter run --dart-define=API_BASE=http://127.0.0.1:8080
+# Android emulator:
+flutter run --dart-define=API_BASE=http://10.0.2.2:8080
+```
+
+```bash
+flutter test --dart-define=API_BASE=http://127.0.0.1:8080
+```
+

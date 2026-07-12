@@ -1,15 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_state.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
-import '../../features/events/presentation/events_stub_page.dart';
-import '../../features/rules/presentation/rules_stub_page.dart';
+import '../../features/events/presentation/cubit/event_detail_cubit.dart';
+import '../../features/events/presentation/cubit/events_cubit.dart';
+import '../../features/events/presentation/event_detail_page.dart';
+import '../../features/events/presentation/events_page.dart';
+import '../../features/events/presentation/explain_stub_page.dart';
+import '../../features/rules/presentation/cubit/rules_cubit.dart';
+import '../../features/rules/presentation/rules_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
+import '../di/injection.dart';
 
 GoRouter createAppRouter(AuthCubit authCubit) {
   return GoRouter(
@@ -42,11 +49,39 @@ GoRouter createAppRouter(AuthCubit authCubit) {
       ),
       GoRoute(
         path: '/events',
-        builder: (context, state) => const EventsStubPage(),
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<EventsCubit>()..load(),
+          child: const EventsPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/events/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return BlocProvider(
+            create: (_) => getIt<EventDetailCubit>()..load(id),
+            child: EventDetailPage(eventId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/explain',
+        builder: (context, state) {
+          final raw = state.uri.queryParameters['ids'] ?? '';
+          final ids = raw
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+          return ExplainStubPage(eventIds: ids);
+        },
       ),
       GoRoute(
         path: '/rules',
-        builder: (context, state) => const RulesStubPage(),
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<RulesCubit>()..load(),
+          child: const RulesPage(),
+        ),
       ),
       GoRoute(
         path: '/settings',

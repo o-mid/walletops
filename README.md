@@ -1,43 +1,67 @@
 # WalletOps Companion
 
-Personal ops console for simulated wallet events: signed webhook ingest, alert rules, a retrying worker, and schema-checked AI summaries. Flutter client talks to a Go API over Postgres.
+Personal ops console for simulated wallet events: signed webhook ingest, alert rules, a retrying worker, and schema-checked AI summaries. Flutter client + Go API + Postgres.
 
-## Local
+## Architecture
 
-```bash
-cp .env.example .env
-docker compose up --build
+See [`docs/architecture.md`](docs/architecture.md). Threat notes: [`docs/threat-model.md`](docs/threat-model.md).
+
+```mermaid
+sequenceDiagram
+  participant P as Partner
+  participant A as API
+  participant D as DB
+  participant W as Worker
+  participant M as Mobile
+  P->>A: HMAC webhook
+  A->>D: pending event
+  W->>D: claim + process
+  M->>A: list events / summarize
 ```
 
-API listens on `http://localhost:8080`. Migrations run on API boot.
+## Env
+
+Copy `.env.example` → `.env` (compose already injects defaults for local):
+
+| Var | Purpose |
+|-----|---------|
+| `DATABASE_URL` | Postgres DSN |
+| `JWT_SECRET` | Access token signing |
+| `WEBHOOK_SECRET` | HMAC for `/v1/webhooks/events` |
+| `AI_PROVIDER` | `mock` (default) or `openai` |
+| `AI_API_KEY` | Required if `openai` |
+| `HTTP_ADDR` | API bind (`:8080`) |
+
+## Demo (< 5 minutes)
 
 ```bash
-curl -s http://localhost:8080/v1/health
-# {"status":"ok"}
-```
+# 1) API + Postgres
+docker compose up --build -d
+curl -s http://127.0.0.1:8080/v1/health
 
-Env vars are listed in `.env.example`. Module path under `api/` is a placeholder — change before publishing.
-
-## Webhooks
-
-`POST /v1/webhooks/events` expects header `X-Signature: sha256=<hex>` — HMAC-SHA256 of the raw body using `WEBHOOK_SECRET`. Map partner `user_ref` values to users via `users.user_ref` (see `scripts/seed_webhooks.sh`).
-
-```bash
+# 2) Seed user + two signed events (maps user_ref=demo-user-1)
 ./scripts/seed_webhooks.sh
-```
 
-## Mobile
+# 3) Optional: create a rule via curl after login from seed output,
+#    or use the mobile app (Events → Rules).
 
-```bash
+# 4) Mobile
 cd mobile
 flutter pub get
-# iOS simulator / desktop:
 flutter run --dart-define=API_BASE=http://127.0.0.1:8080
-# Android emulator:
-flutter run --dart-define=API_BASE=http://10.0.2.2:8080
+# Android emulator: API_BASE=http://10.0.2.2:8080
 ```
+
+In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → Events (status → processed) → open an event → **Explain** (mock AI).
+
+## Tests
 
 ```bash
-flutter test --dart-define=API_BASE=http://127.0.0.1:8080
+# API (stop api container first if it races the worker)
+cd api && DATABASE_URL='postgres://walletops:walletops@localhost:5432/walletops?sslmode=disable' go test ./...
+
+# Mobile
+cd mobile && flutter test --dart-define=API_BASE=http://127.0.0.1:8080
 ```
 
+Module path under `api/` is a placeholder — change before publishing.

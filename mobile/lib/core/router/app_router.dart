@@ -12,7 +12,8 @@ import '../../features/events/presentation/cubit/event_detail_cubit.dart';
 import '../../features/events/presentation/cubit/events_cubit.dart';
 import '../../features/events/presentation/event_detail_page.dart';
 import '../../features/events/presentation/events_page.dart';
-import '../../features/events/presentation/explain_stub_page.dart';
+import '../../features/explain/presentation/cubit/explain_cubit.dart';
+import '../../features/explain/presentation/explain_page.dart';
 import '../../features/rules/presentation/cubit/rules_cubit.dart';
 import '../../features/rules/presentation/rules_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
@@ -73,7 +74,10 @@ GoRouter createAppRouter(AuthCubit authCubit) {
               .map((e) => e.trim())
               .where((e) => e.isNotEmpty)
               .toList();
-          return ExplainStubPage(eventIds: ids);
+          return BlocProvider(
+            create: (_) => getIt<ExplainCubit>()..load(ids),
+            child: ExplainPage(eventIds: ids),
+          );
         },
       ),
       GoRoute(

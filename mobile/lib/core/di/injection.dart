@@ -6,6 +6,9 @@ import '../../features/events/data/events_api.dart';
 import '../../features/events/data/events_repository.dart';
 import '../../features/events/presentation/cubit/event_detail_cubit.dart';
 import '../../features/events/presentation/cubit/events_cubit.dart';
+import '../../features/explain/data/ai_api.dart';
+import '../../features/explain/data/explain_repository.dart';
+import '../../features/explain/presentation/cubit/explain_cubit.dart';
 import '../../features/rules/data/rules_api.dart';
 import '../../features/rules/data/rules_repository.dart';
 import '../../features/rules/presentation/cubit/rules_cubit.dart';
@@ -47,4 +50,8 @@ Future<void> configureDependencies({
   final rulesRepo = RulesRepository(RulesApi(api.dio));
   getIt.registerSingleton<RulesRepository>(rulesRepo);
   getIt.registerFactory(() => RulesCubit(rulesRepo));
+
+  final explainRepo = ExplainRepository(AiApi(api.dio));
+  getIt.registerSingleton<ExplainRepository>(explainRepo);
+  getIt.registerFactory(() => ExplainCubit(explainRepo));
 }

@@ -56,12 +56,14 @@ In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → Events
 
 ## Tests
 
+CI runs the same checks on every pull request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Go tests against Postgres, Flutter analyze + test against a Compose API.
+
 ```bash
 # API (stop api container first if it races the worker)
 cd api && DATABASE_URL='postgres://walletops:walletops@localhost:5432/walletops?sslmode=disable' go test ./...
 
-# Mobile
-cd mobile && flutter test --dart-define=API_BASE=http://127.0.0.1:8080
+# Mobile (API up on :8080 for integration tests)
+cd mobile && flutter pub get && flutter analyze && flutter test --dart-define=API_BASE=http://127.0.0.1:8080
 ```
 
 Module path under `api/` is a placeholder — change before publishing.

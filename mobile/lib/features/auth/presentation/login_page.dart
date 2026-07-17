@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/brand_mark.dart';
 import 'cubit/auth_cubit.dart';
 import 'cubit/auth_state.dart';
 
@@ -26,13 +28,15 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.pageWide),
               child: BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state.status == AuthStatus.authenticated) {
@@ -43,68 +47,58 @@ class _LoginPageState extends State<LoginPage> {
                   return Form(
                     key: _formKey,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'WalletOps',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sign in to your ops console',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: AppSpacing.xxl),
+                        const BrandMark(subtitle: 'Sign in to your ops console'),
+                        const SizedBox(height: AppSpacing.xl),
                         TextFormField(
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.email],
+                          textInputAction: TextInputAction.next,
                           decoration: const InputDecoration(labelText: 'Email'),
-                          validator: (v) =>
-                              (v == null || !v.contains('@')) ? 'Enter email' : null,
+                          validator: (v) => (v == null || !v.contains('@'))
+                              ? 'Enter email'
+                              : null,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.sm),
                         TextFormField(
                           controller: _password,
                           obscureText: true,
                           autofillHints: const [AutofillHints.password],
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(state.busy),
                           decoration:
                               const InputDecoration(labelText: 'Password'),
-                          validator: (v) =>
-                              (v == null || v.length < 8) ? 'Min 8 characters' : null,
+                          validator: (v) => (v == null || v.length < 8)
+                              ? 'Min 8 characters'
+                              : null,
                         ),
                         if (state.errorMessage != null) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.sm),
                           Text(
                             state.errorMessage!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: scheme.error,
+                                ),
                           ),
                         ],
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppSpacing.lg),
                         FilledButton(
-                          onPressed: state.busy
-                              ? null
-                              : () {
-                                  if (!_formKey.currentState!.validate()) {
-                                    return;
-                                  }
-                                  context.read<AuthCubit>().login(
-                                        email: _email.text.trim(),
-                                        password: _password.text,
-                                      );
-                                },
+                          onPressed: state.busy ? null : () => _submit(false),
                           child: state.busy
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 18,
                                   width: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: scheme.onPrimary,
+                                  ),
                                 )
                               : const Text('Sign in'),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.xs),
                         TextButton(
                           onPressed: () => context.go('/register'),
                           child: const Text('Create account'),
@@ -119,5 +113,18 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  void _submit(bool busy) {
+    if (busy) {
+      return;
+    }
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    context.read<AuthCubit>().login(
+          email: _email.text.trim(),
+          password: _password.text,
+        );
   }
 }

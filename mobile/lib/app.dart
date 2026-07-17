@@ -22,6 +22,8 @@ class WalletOpsApp extends StatelessWidget {
       child: MaterialApp.router(
         title: 'WalletOps',
         theme: buildAppTheme(),
+        darkTheme: buildAppDarkTheme(),
+        themeMode: ThemeMode.system,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
       ),

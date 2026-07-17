@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/loading_state.dart';
+import '../../../core/widgets/ops_list_row.dart';
 import 'cubit/rules_cubit.dart';
 import 'cubit/rules_state.dart';
 import 'rule_form_sheet.dart';
@@ -11,10 +15,13 @@ class RulesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Alert rules')),
+      appBar: AppBar(title: const Text('Rules')),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showRuleFormSheet(context),
+        tooltip: 'New rule',
         child: const Icon(Icons.add),
       ),
       body: BlocConsumer<RulesCubit, RulesState>(
@@ -27,28 +34,36 @@ class RulesPage extends StatelessWidget {
         },
         builder: (context, state) {
           return switch (state.status) {
-            RulesStatus.initial || RulesStatus.loading => const Center(
-                child: CircularProgressIndicator(),
-              ),
+            RulesStatus.initial || RulesStatus.loading =>
+              const LoadingState(label: 'Loading rules'),
             RulesStatus.empty => RefreshIndicator(
                 onRefresh: () => context.read<RulesCubit>().refresh(),
                 child: ListView(
-                  children: const [
-                    SizedBox(height: 120),
-                    Center(child: Text('No alert rules yet')),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.55,
+                      child: EmptyState(
+                        title: 'No alert rules yet',
+                        message: 'Create a rule to match incoming events.',
+                        icon: Icons.rule_outlined,
+                        actionLabel: 'New rule',
+                        onAction: () => showRuleFormSheet(context),
+                      ),
+                    ),
                   ],
                 ),
               ),
             RulesStatus.error => RefreshIndicator(
                 onRefresh: () => context.read<RulesCubit>().refresh(),
                 child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    const SizedBox(height: 120),
-                    Center(child: Text(state.errorMessage ?? 'Failed to load')),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => context.read<RulesCubit>().refresh(),
-                        child: const Text('Retry'),
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.55,
+                      child: ErrorState(
+                        message: state.errorMessage ?? 'Failed to load',
+                        onRetry: () => context.read<RulesCubit>().refresh(),
                       ),
                     ),
                   ],
@@ -62,19 +77,20 @@ class RulesPage extends StatelessWidget {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final rule = state.items[index];
-                    return ListTile(
-                      title: Text(rule.name),
-                      subtitle: Text(
-                        [
-                          rule.eventType,
-                          if (rule.threshold != null) '≤ ${rule.threshold}',
-                          rule.enabled ? 'enabled' : 'disabled',
-                        ].join(' · '),
-                      ),
+                    return OpsListRow(
+                      title: rule.name,
+                      subtitle: [
+                        rule.eventType,
+                        if (rule.threshold != null) '≤ ${rule.threshold}',
+                        rule.enabled ? 'enabled' : 'disabled',
+                      ].join(' · '),
                       onTap: () => showRuleFormSheet(context, existing: rule),
                       trailing: IconButton(
                         tooltip: 'Delete',
-                        icon: const Icon(Icons.delete_outline),
+                        icon: Icon(
+                          Icons.delete_outline,
+                          color: scheme.onSurfaceVariant,
+                        ),
                         onPressed: () =>
                             context.read<RulesCubit>().remove(rule.id),
                       ),
@@ -85,24 +101,7 @@ class RulesPage extends StatelessWidget {
           };
         },
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 1,
-        onDestinationSelected: (i) {
-          if (i == 0) {
-            context.go('/events');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.inbox_outlined),
-            label: 'Events',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.rule_outlined),
-            label: 'Rules',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppBottomNav(selectedIndex: 1),
     );
   }
 }

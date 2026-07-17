@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/filter_chip_bar.dart';
+import '../../../core/widgets/loading_state.dart';
+import '../../../core/widgets/ops_list_row.dart';
 import '../data/event_models.dart';
 import 'cubit/events_cubit.dart';
 import 'cubit/events_state.dart';
@@ -10,25 +16,20 @@ import 'widgets/status_chip.dart';
 class EventsPage extends StatelessWidget {
   const EventsPage({super.key});
 
+  static const _filters = <FilterOption<String?>>[
+    FilterOption(value: null, label: 'All'),
+    FilterOption(value: 'pending', label: 'Pending'),
+    FilterOption(value: 'processing', label: 'Processing'),
+    FilterOption(value: 'processed', label: 'Processed'),
+    FilterOption(value: 'failed', label: 'Failed'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Events'),
         actions: [
-          PopupMenuButton<String?>(
-            tooltip: 'Filter status',
-            onSelected: (value) =>
-                context.read<EventsCubit>().setFilter(value),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: null, child: Text('All')),
-              PopupMenuItem(value: 'pending', child: Text('Pending')),
-              PopupMenuItem(value: 'processing', child: Text('Processing')),
-              PopupMenuItem(value: 'processed', child: Text('Processed')),
-              PopupMenuItem(value: 'failed', child: Text('Failed')),
-            ],
-            icon: const Icon(Icons.filter_list),
-          ),
           IconButton(
             tooltip: 'Settings',
             onPressed: () => context.push('/settings'),
@@ -36,62 +37,74 @@ class EventsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: BlocBuilder<EventsCubit, EventsState>(
-        builder: (context, state) {
-          return switch (state.status) {
-            EventsStatus.initial || EventsStatus.loading => const Center(
-                child: CircularProgressIndicator(),
-              ),
-            EventsStatus.empty => RefreshIndicator(
-                onRefresh: () => context.read<EventsCubit>().refresh(),
-                child: ListView(
-                  children: const [
-                    SizedBox(height: 120),
-                    Center(child: Text('No events yet')),
-                  ],
-                ),
-              ),
-            EventsStatus.error => RefreshIndicator(
-                onRefresh: () => context.read<EventsCubit>().refresh(),
-                child: ListView(
-                  children: [
-                    const SizedBox(height: 120),
-                    Center(child: Text(state.errorMessage ?? 'Failed to load')),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => context.read<EventsCubit>().refresh(),
-                        child: const Text('Retry'),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          BlocBuilder<EventsCubit, EventsState>(
+            buildWhen: (prev, next) => prev.filter != next.filter,
+            builder: (context, state) {
+              return FilterChipBar<String?>(
+                options: _filters,
+                selected: state.filter,
+                onSelected: (value) =>
+                    context.read<EventsCubit>().setFilter(value),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: BlocBuilder<EventsCubit, EventsState>(
+              builder: (context, state) {
+                return switch (state.status) {
+                  EventsStatus.initial || EventsStatus.loading =>
+                    const LoadingState(label: 'Loading events'),
+                  EventsStatus.empty => RefreshIndicator(
+                      onRefresh: () => context.read<EventsCubit>().refresh(),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.55,
+                            child: EmptyState(
+                              title: 'No events yet',
+                              message: state.filter == null
+                                  ? 'Incoming webhook events will appear here.'
+                                  : 'No events match this status filter.',
+                              actionLabel: 'Refresh',
+                              onAction: () =>
+                                  context.read<EventsCubit>().refresh(),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            EventsStatus.ready => RefreshIndicator(
-                onRefresh: () => context.read<EventsCubit>().refresh(),
-                child: EventsListView(items: state.items),
-              ),
-          };
-        },
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (i) {
-          if (i == 1) {
-            context.go('/rules');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.inbox_outlined),
-            label: 'Events',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.rule_outlined),
-            label: 'Rules',
+                  EventsStatus.error => RefreshIndicator(
+                      onRefresh: () => context.read<EventsCubit>().refresh(),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.55,
+                            child: ErrorState(
+                              message: state.errorMessage ?? 'Failed to load',
+                              onRetry: () =>
+                                  context.read<EventsCubit>().refresh(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  EventsStatus.ready => RefreshIndicator(
+                      onRefresh: () => context.read<EventsCubit>().refresh(),
+                      child: EventsListView(items: state.items),
+                    ),
+                };
+              },
+            ),
           ),
         ],
       ),
+      bottomNavigationBar: const AppBottomNav(selectedIndex: 0),
     );
   }
 }
@@ -109,9 +122,9 @@ class EventsListView extends StatelessWidget {
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final event = items[index];
-        return ListTile(
-          title: Text(event.type),
-          subtitle: Text(event.idempotencyKey),
+        return OpsListRow(
+          title: event.type,
+          subtitle: event.idempotencyKey,
           trailing: StatusChip(status: event.status),
           onTap: () => context.push('/events/${event.id}'),
         );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../data/rule_models.dart';
 import 'cubit/rules_cubit.dart';
 
@@ -11,6 +12,7 @@ Future<void> showRuleFormSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     builder: (ctx) {
       return Padding(
         padding: EdgeInsets.only(
@@ -68,9 +70,16 @@ class _RuleFormSheetState extends State<RuleFormSheet> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.existing != null;
+    final theme = Theme.of(context);
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -79,9 +88,16 @@ class _RuleFormSheetState extends State<RuleFormSheet> {
             children: [
               Text(
                 editing ? 'Edit rule' : 'New rule',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: theme.textTheme.titleLarge,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                editing
+                    ? 'Update match conditions for this alert.'
+                    : 'Define when an event should raise an alert.',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(labelText: 'Name'),
@@ -89,10 +105,11 @@ class _RuleFormSheetState extends State<RuleFormSheet> {
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               DropdownMenu<String>(
                 initialSelection: _eventType,
                 label: const Text('Event type'),
+                expandedInsets: EdgeInsets.zero,
                 dropdownMenuEntries: [
                   for (final t in kEventTypes)
                     DropdownMenuEntry(value: t, label: t),
@@ -103,7 +120,7 @@ class _RuleFormSheetState extends State<RuleFormSheet> {
                   }
                 },
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _threshold,
                 keyboardType:
@@ -112,13 +129,18 @@ class _RuleFormSheetState extends State<RuleFormSheet> {
                   labelText: 'Threshold (optional)',
                 ),
               ),
+              const SizedBox(height: AppSpacing.xs),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Enabled'),
+                subtitle: Text(
+                  _enabled ? 'Rule is active' : 'Rule is paused',
+                  style: theme.textTheme.bodySmall,
+                ),
                 value: _enabled,
                 onChanged: (v) => setState(() => _enabled = v),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               FilledButton(
                 onPressed: () async {
                   if (!_formKey.currentState!.validate()) {
@@ -129,7 +151,9 @@ class _RuleFormSheetState extends State<RuleFormSheet> {
                       raw.isEmpty ? null : double.tryParse(raw);
                   if (raw.isNotEmpty && threshold == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Threshold must be a number')),
+                      const SnackBar(
+                        content: Text('Threshold must be a number'),
+                      ),
                     );
                     return;
                   }

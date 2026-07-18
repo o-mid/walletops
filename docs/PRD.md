@@ -395,7 +395,8 @@ Target: **under 5 minutes** once env is set.
 
 ## Related files
 
-- [`../primary-project-recommendation.md`](../primary-project-recommendation.md)  
-- [`../backlog/project-backlog.md`](../backlog/project-backlog.md)  
-- [`cursor-build-instructions.md`](./cursor-build-instructions.md) — paste into Cursor in the **app** repo  
-- [`human-code-standards.md`](./human-code-standards.md) — anti–AI-slop rules  
+- [`architecture.md`](./architecture.md)
+- [`threat-model.md`](./threat-model.md)
+- [`HUMAN_CODE_STANDARDS.md`](./HUMAN_CODE_STANDARDS.md)
+- [`GIT_WORKFLOW.md`](./GIT_WORKFLOW.md)
+

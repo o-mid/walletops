@@ -16,6 +16,8 @@ Scope: local/demo WalletOps Companion — Flutter client + Go API + Postgres. No
 |--------|----------------|
 | Forged partner webhooks | HMAC-SHA256 over raw body (`X-Signature: sha256=<hex>`); reject bad sigs with 401 |
 | Replay / duplicate ingest | Unique `(user_id, idempotency_key)`; replay returns same event |
+| Double-processing under two workers | `FOR UPDATE SKIP LOCKED` on claim |
+| Crash while `processing` | `claimed_at` lease; stale rows are reclaimable |
 | Stolen device tokens | `flutter_secure_storage`; short access TTL; refresh rotation on use |
 | Prompt injection via payload | Summarize prompt uses allowlisted fields only (type, amount, status, rule name) |
 | Cross-user event access | Ownership checks on event IDs for list/detail/summarize |

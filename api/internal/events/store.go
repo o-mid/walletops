@@ -230,11 +230,23 @@ func (s *Store) GetByID(ctx context.Context, id string) (Event, error) {
 	return e, nil
 }
 
+// ClaimLease is how long a processing row may sit before another worker can reclaim it.
+const ClaimLease = 45 * time.Second
+
 func (s *Store) ClaimNext(ctx context.Context, maxAttempts int) (Event, error) {
+	return s.ClaimNextWithLease(ctx, maxAttempts, ClaimLease)
+}
+
+func (s *Store) ClaimNextWithLease(ctx context.Context, maxAttempts int, lease time.Duration) (Event, error) {
+	if lease <= 0 {
+		lease = ClaimLease
+	}
+	secs := int(lease.Seconds())
 	var e Event
 	err := s.pool.QueryRow(ctx, `
 		UPDATE events
-		SET status = 'processing'
+		SET status = 'processing',
+		    claimed_at = now()
 		WHERE id = (
 			SELECT id FROM events
 			WHERE status = 'pending'
@@ -243,13 +255,18 @@ func (s *Store) ClaimNext(ctx context.Context, maxAttempts int) (Event, error) {
 			        AND attempt_count < $1
 			        AND COALESCE(processed_at, received_at) <= now() - make_interval(secs => LEAST(60, GREATEST(2, attempt_count * 2)))
 			   )
+			   OR (
+			        status = 'processing'
+			        AND claimed_at IS NOT NULL
+			        AND claimed_at <= now() - make_interval(secs => $2)
+			   )
 			ORDER BY received_at ASC
 			LIMIT 1
 			FOR UPDATE SKIP LOCKED
 		)
 		RETURNING id::text, user_id::text, idempotency_key, type, payload, status,
 		          attempt_count, last_error, matched_rule_id::text, received_at, processed_at
-	`, maxAttempts).Scan(
+	`, maxAttempts, secs).Scan(
 		&e.ID, &e.UserID, &e.IdempotencyKey, &e.Type, &e.Payload, &e.Status,
 		&e.AttemptCount, &e.LastError, &e.MatchedRuleID, &e.ReceivedAt, &e.ProcessedAt,
 	)
@@ -266,7 +283,8 @@ func (s *Store) ClaimByID(ctx context.Context, id string) (Event, error) {
 	var e Event
 	err := s.pool.QueryRow(ctx, `
 		UPDATE events
-		SET status = 'processing'
+		SET status = 'processing',
+		    claimed_at = now()
 		WHERE id = $1 AND status IN ('pending', 'failed')
 		RETURNING id::text, user_id::text, idempotency_key, type, payload, status,
 		          attempt_count, last_error, matched_rule_id::text, received_at, processed_at
@@ -289,7 +307,8 @@ func (s *Store) MarkProcessed(ctx context.Context, id string, matchedRuleID *str
 		SET status = 'processed',
 		    matched_rule_id = $2,
 		    processed_at = now(),
-		    last_error = NULL
+		    last_error = NULL,
+		    claimed_at = NULL
 		WHERE id = $1 AND status = 'processing'
 	`, id, matchedRuleID)
 	if err != nil {
@@ -308,7 +327,8 @@ func (s *Store) MarkAttemptFailed(ctx context.Context, id, lastError string) (Ev
 		SET attempt_count = attempt_count + 1,
 		    last_error = $2,
 		    status = 'failed',
-		    processed_at = now()
+		    processed_at = now(),
+		    claimed_at = NULL
 		WHERE id = $1 AND status = 'processing'
 		RETURNING id::text, user_id::text, idempotency_key, type, payload, status,
 		          attempt_count, last_error, matched_rule_id::text, received_at, processed_at
@@ -323,4 +343,51 @@ func (s *Store) MarkAttemptFailed(ctx context.Context, id, lastError string) (Ev
 		return Event{}, fmt.Errorf("mark attempt failed: %w", err)
 	}
 	return e, nil
+}
+
+type QueueStats struct {
+	ByStatus       map[string]int64 `json:"by_status"`
+	OldestPendingS *float64         `json:"oldest_pending_seconds,omitempty"`
+}
+
+func (s *Store) QueueStats(ctx context.Context) (QueueStats, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT status, count(*)::bigint
+		FROM events
+		GROUP BY status
+	`)
+	if err != nil {
+		return QueueStats{}, fmt.Errorf("queue counts: %w", err)
+	}
+	defer rows.Close()
+
+	out := QueueStats{ByStatus: map[string]int64{}}
+	for rows.Next() {
+		var status string
+		var n int64
+		if err := rows.Scan(&status, &n); err != nil {
+			return QueueStats{}, fmt.Errorf("scan queue count: %w", err)
+		}
+		out.ByStatus[status] = n
+	}
+	if err := rows.Err(); err != nil {
+		return QueueStats{}, err
+	}
+
+	var age float64
+	err = s.pool.QueryRow(ctx, `
+		SELECT EXTRACT(EPOCH FROM (now() - received_at))::float8
+		FROM events
+		WHERE status = 'pending'
+		ORDER BY received_at ASC
+		LIMIT 1
+	`).Scan(&age)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return out, nil
+	}
+	if err != nil {
+		return QueueStats{}, fmt.Errorf("oldest pending: %w", err)
+	}
+	out.OldestPendingS = &age
+	return out, nil
 }

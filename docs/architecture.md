@@ -30,7 +30,7 @@ sequenceDiagram
   API->>DB: Insert event status=pending (idempotent)
   API-->>Partner: 202/200 event
 
-  Worker->>DB: Claim pending/failed (SKIP LOCKED)
+  Worker->>DB: Claim pending/failed/stale processing (SKIP LOCKED + lease)
   Worker->>DB: Match alert rules, mark processed/failed
   Worker-->>DB: Update status + matched_rule_id
 
@@ -46,13 +46,22 @@ sequenceDiagram
   API-->>Mobile: title, bullets, risk_level, follow_ups
 ```
 
+## Worker claim
+
+1. Select one eligible row: `pending`, retriable `failed`, or `processing` whose `claimed_at` lease expired.
+2. `FOR UPDATE SKIP LOCKED` so two API processes do not take the same row.
+3. Set `status=processing` and refresh `claimed_at`.
+4. Match rules / validate payload; mark `processed` or `failed` (clears `claimed_at`).
+
+Default lease: 45s (`events.ClaimLease`). Health exposes queue counts via `GET /v1/health`.
+
 ## Packages (API)
 
 | Path | Role |
 |------|------|
 | `internal/auth` | Register/login/refresh, JWT middleware |
 | `internal/rules` | Alert rule CRUD + matching lookup |
-| `internal/events` | Persist/list/claim events |
+| `internal/events` | Persist/list/claim events, queue stats |
 | `internal/webhook` | HMAC ingest |
 | `internal/worker` | Poll/claim/process loop |
 | `internal/ai` | Mock/OpenAI summarize + audit row |

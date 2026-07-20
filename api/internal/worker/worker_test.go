@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -63,6 +64,107 @@ func TestProcessSuccess(t *testing.T) {
 	}
 	if got.MatchedRuleID == nil || *got.MatchedRuleID != rule.ID {
 		t.Fatalf("matched_rule_id=%v want %s", got.MatchedRuleID, rule.ID)
+	}
+}
+
+func TestConcurrentClaimNoDoubleProcess(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	userID := createUser(t, pool)
+	eventStore := events.NewStore(pool)
+	ruleStore := rules.NewStore(pool)
+	const n = 40
+	for i := 0; i < n; i++ {
+		_, _, err := eventStore.CreatePending(ctx, events.CreateInput{
+			UserID:         userID,
+			IdempotencyKey: fmt.Sprintf("evt_race_%d_%d", time.Now().UnixNano(), i),
+			Type:           "tx_simulated",
+			Payload:        []byte(`{"amount":1}`),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	w := worker.New(eventStore, ruleStore, slog.Default())
+	errCh := make(chan error, 2)
+	var wg sync.WaitGroup
+	run := func() {
+		defer wg.Done()
+		for {
+			ok, err := w.ProcessOne(ctx)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			if !ok {
+				return
+			}
+		}
+	}
+	wg.Add(2)
+	go run()
+	go run()
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	processed, err := eventStore.ListForUser(ctx, userID, "processed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(processed) != n {
+		t.Fatalf("processed=%d want %d", len(processed), n)
+	}
+	for _, status := range []string{"pending", "processing", "failed"} {
+		left, err := eventStore.ListForUser(ctx, userID, status)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(left) != 0 {
+			t.Fatalf("leftover status=%s count=%d", status, len(left))
+		}
+	}
+}
+
+func TestReclaimExpiredProcessingLease(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	userID := createUser(t, pool)
+	eventStore := events.NewStore(pool)
+
+	ev, _, err := eventStore.CreatePending(ctx, events.CreateInput{
+		UserID:         userID,
+		IdempotencyKey: fmt.Sprintf("evt_lease_%d", time.Now().UnixNano()),
+		Type:           "balance_drop",
+		Payload:        []byte(`{"amount":10}`),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := eventStore.ClaimByID(ctx, ev.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(ctx, `
+		UPDATE events
+		SET claimed_at = now() - interval '2 minutes',
+		    received_at = timestamptz '2000-01-01'
+		WHERE id = $1
+	`, ev.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	reclaimed, err := eventStore.ClaimNextWithLease(ctx, worker.MaxAttempts, time.Second)
+	if err != nil {
+		t.Fatalf("reclaim: %v", err)
+	}
+	if reclaimed.ID != ev.ID {
+		t.Fatalf("reclaimed id=%s want %s", reclaimed.ID, ev.ID)
 	}
 }
 

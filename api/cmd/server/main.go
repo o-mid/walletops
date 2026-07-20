@@ -79,6 +79,9 @@ func main() {
 		WorkerSnapshot: func() any {
 			return wrk.Stats.Snapshot()
 		},
+		QueueSnapshot: func(ctx context.Context) (any, error) {
+			return eventStore.QueueStats(ctx)
+		},
 	})
 
 

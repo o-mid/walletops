@@ -73,7 +73,7 @@ fvm flutter run --dart-define=API_BASE=http://127.0.0.1:8080
 # Android emulator: API_BASE=http://10.0.2.2:8080
 ```
 
-In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → **Events → Run live demo → confirm**. Watch each webhook move **PENDING → PROCESSING → PROCESSED** (compose holds processing ~8s so the queue is readable). Open an event for pipeline steps → **Explain**.
+In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → **Events → Run live demo → confirm**. Watch each webhook move **PENDING → PROCESSING → PROCESSED** (compose holds processing ~5s so the queue is readable). Open an event for pipeline steps → **Explain**. Check **Rules** for the demo alert rule the worker matches.
 
 `POST /v1/demo/simulate` (auth) inserts fresh pending events for the journey; partner HMAC ingest remains `POST /v1/webhooks/events`.
 

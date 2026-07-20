@@ -78,72 +78,86 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: scheme.surfaceContainerLow,
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.radiusSm),
-                            border: Border(
-                              left: BorderSide(
-                                color: scheme.primary,
-                                width: 3,
+                        Stack(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: scheme.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(
+                                  AppSpacing.radiusSm,
+                                ),
+                                border: Border.all(
+                                  color:
+                                      scheme.outline.withValues(alpha: 0.7),
+                                ),
                               ),
-                              top: BorderSide(
-                                color: scheme.outline.withValues(alpha: 0.7),
-                              ),
-                              right: BorderSide(
-                                color: scheme.outline.withValues(alpha: 0.7),
-                              ),
-                              bottom: BorderSide(
-                                color: scheme.outline.withValues(alpha: 0.7),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'DEMO ACCOUNT',
+                                    style:
+                                        theme.textTheme.labelMedium?.copyWith(
+                                      color: scheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xxs),
+                                  Text(
+                                    'Prefilled credentials',
+                                    style: theme.textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(height: AppSpacing.xxs),
+                                  Text(
+                                    '$kDemoEmail\npassword: $kDemoPassword\n'
+                                    'webhook user_ref: $kDemoUserRef',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    'Prefer in-app “Run live demo” on Events '
+                                    'after sign-in.',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        _email.text = kDemoEmail;
+                                        _password.text = kDemoPassword;
+                                      },
+                                      child: const Text(
+                                        'Reset to demo credentials',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'DEMO ACCOUNT',
-                                style: theme.textTheme.labelMedium?.copyWith(
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: 3,
+                                decoration: BoxDecoration(
                                   color: scheme.primary,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft:
+                                        Radius.circular(AppSpacing.radiusSm),
+                                    bottomLeft:
+                                        Radius.circular(AppSpacing.radiusSm),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: AppSpacing.xxs),
-                              Text(
-                                'Prefilled credentials',
-                                style: theme.textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: AppSpacing.xxs),
-                              Text(
-                                '$kDemoEmail\npassword: $kDemoPassword\n'
-                                'webhook user_ref: $kDemoUserRef',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontFamily: 'monospace',
-                                  height: 1.45,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                'Run ./scripts/seed_webhooks.sh once after '
-                                'docker compose up.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton(
-                                  onPressed: () {
-                                    _email.text = kDemoEmail;
-                                    _password.text = kDemoPassword;
-                                  },
-                                  child: const Text('Reset to demo credentials'),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         TextFormField(

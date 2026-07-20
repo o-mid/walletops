@@ -70,8 +70,8 @@ class SettingsPage extends StatelessWidget {
               'In-app demo (recommended)\n'
               '1) Keep docker compose up on your Mac\n'
               '2) Sign in with the demo account\n'
-              '3) Events → “Run live demo” → confirm\n'
-              '4) Watch each webhook: PENDING → PROCESSING → PROCESSED\n'
+              '3) Events → “Run live demo” → confirm in the sheet\n'
+              '4) Watch each webhook slowly: PENDING → PROCESSING → PROCESSED\n'
               '5) Open an event for pipeline steps → Explain\n\n'
               'Optional Mac seed (instant, often already PROCESSED):\n'
               './scripts/seed_webhooks.sh',

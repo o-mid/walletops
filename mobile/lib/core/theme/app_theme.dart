@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_spacing.dart';
 
@@ -259,9 +260,7 @@ ThemeData _buildTheme(Brightness brightness) {
 }
 
 TextTheme _textTheme(ColorScheme scheme) {
-  final base = Typography.material2021(
-    platform: TargetPlatform.android,
-  ).black.apply(
+  final base = GoogleFonts.ibmPlexSansTextTheme().apply(
     bodyColor: scheme.onSurface,
     displayColor: scheme.onSurface,
   );
@@ -269,37 +268,37 @@ TextTheme _textTheme(ColorScheme scheme) {
   return base.copyWith(
     headlineLarge: base.headlineLarge?.copyWith(
       fontSize: 30,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       letterSpacing: -0.6,
-      height: 1.1,
+      height: 1.12,
     ),
     headlineMedium: base.headlineMedium?.copyWith(
       fontSize: 26,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       letterSpacing: -0.5,
       height: 1.15,
     ),
     headlineSmall: base.headlineSmall?.copyWith(
       fontSize: 20,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       letterSpacing: -0.3,
       height: 1.2,
     ),
     titleLarge: base.titleLarge?.copyWith(
       fontSize: 18,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       letterSpacing: -0.2,
       height: 1.25,
     ),
     titleMedium: base.titleMedium?.copyWith(
       fontSize: 15,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       height: 1.3,
     ),
     titleSmall: base.titleSmall?.copyWith(
       fontSize: 13,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.15,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
       height: 1.3,
     ),
     bodyLarge: base.bodyLarge?.copyWith(
@@ -313,7 +312,7 @@ TextTheme _textTheme(ColorScheme scheme) {
       height: 1.45,
       color: scheme.onSurface,
     ),
-    bodySmall: base.bodySmall?.copyWith(
+    bodySmall: GoogleFonts.ibmPlexMono(
       fontSize: 12,
       fontWeight: FontWeight.w400,
       height: 1.4,
@@ -321,18 +320,19 @@ TextTheme _textTheme(ColorScheme scheme) {
     ),
     labelLarge: base.labelLarge?.copyWith(
       fontSize: 13,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.35,
-    ),
-    labelMedium: base.labelMedium?.copyWith(
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.45,
-    ),
-    labelSmall: base.labelSmall?.copyWith(
-      fontSize: 10,
       fontWeight: FontWeight.w600,
-      letterSpacing: 0.55,
+      letterSpacing: 0.2,
+    ),
+    labelMedium: GoogleFonts.ibmPlexMono(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.4,
+      color: scheme.onSurface,
+    ),
+    labelSmall: GoogleFonts.ibmPlexMono(
+      fontSize: 10,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
       color: scheme.onSurfaceVariant,
     ),
   );

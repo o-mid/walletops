@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/rules_repository.dart';
+import '../../../../core/error/error_mapper.dart';
+import '../../domain/rules_repository.dart';
 import 'rules_state.dart';
 
 class RulesCubit extends Cubit<RulesState> {
@@ -22,7 +22,7 @@ class RulesCubit extends Cubit<RulesState> {
       emit(
         RulesState(
           status: RulesStatus.error,
-          errorMessage: _message(e),
+          errorMessage: mapError(e).message,
         ),
       );
     }
@@ -47,7 +47,7 @@ class RulesCubit extends Cubit<RulesState> {
       await load();
       return true;
     } catch (e) {
-      emit(state.copyWith(busy: false, errorMessage: _message(e)));
+      emit(state.copyWith(busy: false, errorMessage: mapError(e).message));
       return false;
     }
   }
@@ -73,7 +73,7 @@ class RulesCubit extends Cubit<RulesState> {
       await load();
       return true;
     } catch (e) {
-      emit(state.copyWith(busy: false, errorMessage: _message(e)));
+      emit(state.copyWith(busy: false, errorMessage: mapError(e).message));
       return false;
     }
   }
@@ -84,21 +84,7 @@ class RulesCubit extends Cubit<RulesState> {
       await _repo.delete(id);
       await load();
     } catch (e) {
-      emit(state.copyWith(busy: false, errorMessage: _message(e)));
+      emit(state.copyWith(busy: false, errorMessage: mapError(e).message));
     }
-  }
-
-  String _message(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['error'] is Map) {
-        final msg = data['error']['message'];
-        if (msg is String && msg.isNotEmpty) {
-          return msg;
-        }
-      }
-      return 'Request failed';
-    }
-    return 'Something went wrong';
   }
 }

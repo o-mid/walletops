@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/demo_credentials.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/brand_mark.dart';
 import 'cubit/auth_cubit.dart';
@@ -15,8 +16,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  final _email = TextEditingController(text: kDemoEmail);
+  final _password = TextEditingController(text: kDemoPassword);
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -29,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -50,8 +52,68 @@ class _LoginPageState extends State<LoginPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: AppSpacing.xxl),
-                        const BrandMark(subtitle: 'Sign in to your ops console'),
-                        const SizedBox(height: AppSpacing.xl),
+                        const BrandMark(
+                          subtitle: 'Simulated wallet ops console',
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Sign in to watch HMAC webhooks land, the worker claim '
+                          'them, and rules match — all against a local API.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusMd),
+                            border: Border.all(
+                              color:
+                                  scheme.outlineVariant.withValues(alpha: 0.7),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Demo account (prefilled)',
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: AppSpacing.xxs),
+                              Text(
+                                '$kDemoEmail\npassword: $kDemoPassword\n'
+                                'webhook user_ref: $kDemoUserRef',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontFamily: 'monospace',
+                                  height: 1.45,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'Run ./scripts/seed_webhooks.sh once after '
+                                'docker compose up.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton(
+                                  onPressed: () {
+                                    _email.text = kDemoEmail;
+                                    _password.text = kDemoPassword;
+                                  },
+                                  child: const Text('Reset to demo credentials'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
                         TextFormField(
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
@@ -79,9 +141,9 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: AppSpacing.sm),
                           Text(
                             state.errorMessage!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: scheme.error,
-                                ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.error,
+                            ),
                           ),
                         ],
                         const SizedBox(height: AppSpacing.lg),

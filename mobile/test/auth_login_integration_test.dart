@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:walletops_mobile/core/network/api_client.dart';
 import 'package:walletops_mobile/core/storage/token_storage.dart';
-import 'package:walletops_mobile/features/auth/data/auth_repository.dart';
+import 'package:walletops_mobile/features/auth/data/auth_repository_impl.dart';
 import 'package:walletops_mobile/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:walletops_mobile/features/auth/presentation/cubit/auth_state.dart';
 
@@ -17,7 +17,7 @@ void main() {
       baseUrl: base,
       onSessionExpired: () {},
     );
-    final repo = AuthRepository(api: api.authApi, storage: storage);
+    final repo = AuthRepositoryImpl(api: api.authApi, storage: storage);
     final cubit = AuthCubit(repo);
 
     final email =

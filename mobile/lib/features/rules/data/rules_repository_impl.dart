@@ -1,26 +1,34 @@
+import '../../../core/error/error_mapper.dart';
+import '../domain/rules_repository.dart';
 import 'rule_models.dart';
 import 'rules_api.dart';
 
-class RulesRepository {
-  RulesRepository(this._api);
+class RulesRepositoryImpl implements RulesRepository {
+  RulesRepositoryImpl(this._api);
 
   final RulesApi _api;
 
-  Future<List<AlertRule>> list() => _api.list();
+  @override
+  Future<List<AlertRule>> list() => guardApi(_api.list);
 
+  @override
   Future<AlertRule> create({
     required String name,
     required String eventType,
     double? threshold,
     bool enabled = true,
-  }) =>
-      _api.create(
+  }) {
+    return guardApi(
+      () => _api.create(
         name: name,
         eventType: eventType,
         threshold: threshold,
         enabled: enabled,
-      );
+      ),
+    );
+  }
 
+  @override
   Future<AlertRule> update({
     required String id,
     String? name,
@@ -28,15 +36,19 @@ class RulesRepository {
     double? threshold,
     bool clearThreshold = false,
     bool? enabled,
-  }) =>
-      _api.update(
+  }) {
+    return guardApi(
+      () => _api.update(
         id: id,
         name: name,
         eventType: eventType,
         threshold: threshold,
         clearThreshold: clearThreshold,
         enabled: enabled,
-      );
+      ),
+    );
+  }
 
-  Future<void> delete(String id) => _api.delete(id);
+  @override
+  Future<void> delete(String id) => guardApi(() => _api.delete(id));
 }

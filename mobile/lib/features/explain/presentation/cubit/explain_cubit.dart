@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/explain_repository.dart';
+import '../../../../core/error/error_mapper.dart';
+import '../../domain/explain_repository.dart';
 import 'explain_state.dart';
 
 class ExplainCubit extends Cubit<ExplainState> {
@@ -39,25 +39,11 @@ class ExplainCubit extends Cubit<ExplainState> {
         ExplainState(
           status: ExplainStatus.error,
           eventIds: eventIds,
-          errorMessage: _message(e),
+          errorMessage: mapError(e).message,
         ),
       );
     }
   }
 
   Future<void> retry() => load(state.eventIds);
-
-  String _message(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['error'] is Map) {
-        final msg = data['error']['message'];
-        if (msg is String && msg.isNotEmpty) {
-          return msg;
-        }
-      }
-      return 'Failed to summarize events';
-    }
-    return 'Something went wrong';
-  }
 }

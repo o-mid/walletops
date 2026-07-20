@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:walletops_mobile/core/network/api_client.dart';
 import 'package:walletops_mobile/core/storage/token_storage.dart';
-import 'package:walletops_mobile/features/auth/data/auth_repository.dart';
+import 'package:walletops_mobile/features/auth/data/auth_repository_impl.dart';
 import 'package:walletops_mobile/features/events/data/events_api.dart';
-import 'package:walletops_mobile/features/events/data/events_repository.dart';
+import 'package:walletops_mobile/features/events/data/events_repository_impl.dart';
 import 'package:walletops_mobile/features/events/presentation/cubit/event_detail_cubit.dart';
 import 'package:walletops_mobile/features/events/presentation/cubit/event_detail_state.dart';
 import 'package:walletops_mobile/features/events/presentation/cubit/events_cubit.dart';
 import 'package:walletops_mobile/features/events/presentation/cubit/events_state.dart';
 import 'package:walletops_mobile/features/rules/data/rules_api.dart';
-import 'package:walletops_mobile/features/rules/data/rules_repository.dart';
+import 'package:walletops_mobile/features/rules/data/rules_repository_impl.dart';
 import 'package:walletops_mobile/features/rules/presentation/cubit/rules_cubit.dart';
 import 'package:walletops_mobile/features/rules/presentation/cubit/rules_state.dart';
 
@@ -25,12 +25,12 @@ void main() {
       baseUrl: base,
       onSessionExpired: () {},
     );
-    final auth = AuthRepository(api: api.authApi, storage: storage);
+    final auth = AuthRepositoryImpl(api: api.authApi, storage: storage);
     final email =
         'mobile-events-${DateTime.now().microsecondsSinceEpoch}@walletops.local';
     await auth.register(email: email, password: 'ops-secret-1');
 
-    final rulesCubit = RulesCubit(RulesRepository(RulesApi(api.dio)));
+    final rulesCubit = RulesCubit(RulesRepositoryImpl(RulesApi(api.dio)));
     final created = await rulesCubit.create(
       name: 'drop watch',
       eventType: 'balance_drop',
@@ -54,7 +54,7 @@ void main() {
       isTrue,
     );
 
-    final eventsCubit = EventsCubit(EventsRepository(EventsApi(api.dio)));
+    final eventsCubit = EventsCubit(EventsRepositoryImpl(EventsApi(api.dio)));
     await eventsCubit.load();
     expect(
       eventsCubit.state.status == EventsStatus.empty ||
@@ -66,7 +66,7 @@ void main() {
     // if empty, still validates cubit empty path.
     if (eventsCubit.state.status == EventsStatus.ready) {
       final id = eventsCubit.state.items.first.id;
-      final detail = EventDetailCubit(EventsRepository(EventsApi(api.dio)));
+      final detail = EventDetailCubit(EventsRepositoryImpl(EventsApi(api.dio)));
       await detail.load(id);
       expect(detail.state.status, EventDetailStatus.ready);
       expect(detail.state.event?.id, id);

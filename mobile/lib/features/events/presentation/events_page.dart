@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/filter_chip_bar.dart';
@@ -30,6 +29,11 @@ class EventsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Events'),
         actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: () => context.read<EventsCubit>().refresh(),
+            icon: const Icon(Icons.refresh),
+          ),
           IconButton(
             tooltip: 'Settings',
             onPressed: () => context.push('/settings'),
@@ -68,7 +72,9 @@ class EventsPage extends StatelessWidget {
                             child: EmptyState(
                               title: 'No events yet',
                               message: state.filter == null
-                                  ? 'Incoming webhook events will appear here.'
+                                  ? 'Seed demo webhooks, then pull to refresh:\n'
+                                      './scripts/seed_webhooks.sh\n\n'
+                                      'Flow: HMAC ingest → pending → worker claim → processed.'
                                   : 'No events match this status filter.',
                               actionLabel: 'Refresh',
                               onAction: () =>
@@ -104,7 +110,6 @@ class EventsPage extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const AppBottomNav(selectedIndex: 0),
     );
   }
 }
@@ -124,7 +129,7 @@ class EventsListView extends StatelessWidget {
         final event = items[index];
         return OpsListRow(
           title: event.type,
-          subtitle: event.idempotencyKey,
+          subtitle: '${event.listSubtitle}\n${event.idempotencyKey}',
           trailing: StatusChip(status: event.status),
           onTap: () => context.push('/events/${event.id}'),
         );

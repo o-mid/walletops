@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/events_repository.dart';
+import '../../../../core/error/error_mapper.dart';
+import '../../domain/events_repository.dart';
 import 'events_state.dart';
 
 class EventsCubit extends Cubit<EventsState> {
@@ -24,13 +24,19 @@ class EventsCubit extends Cubit<EventsState> {
         emit(EventsState(status: EventsStatus.empty, filter: filter));
         return;
       }
-      emit(EventsState(status: EventsStatus.ready, items: items, filter: filter));
+      emit(
+        EventsState(
+          status: EventsStatus.ready,
+          items: items,
+          filter: filter,
+        ),
+      );
     } catch (e) {
       emit(
         EventsState(
           status: EventsStatus.error,
           filter: filter,
-          errorMessage: _message(e),
+          errorMessage: mapError(e).message,
         ),
       );
     }
@@ -40,11 +46,4 @@ class EventsCubit extends Cubit<EventsState> {
 
   Future<void> setFilter(String? status) =>
       load(status: status, updateFilter: true);
-
-  String _message(Object e) {
-    if (e is DioException) {
-      return 'Failed to load events';
-    }
-    return 'Something went wrong';
-  }
 }

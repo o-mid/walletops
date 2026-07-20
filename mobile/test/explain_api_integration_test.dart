@@ -5,9 +5,9 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:walletops_mobile/core/network/api_client.dart';
 import 'package:walletops_mobile/core/storage/token_storage.dart';
-import 'package:walletops_mobile/features/auth/data/auth_repository.dart';
+import 'package:walletops_mobile/features/auth/data/auth_repository_impl.dart';
 import 'package:walletops_mobile/features/explain/data/ai_api.dart';
-import 'package:walletops_mobile/features/explain/data/explain_repository.dart';
+import 'package:walletops_mobile/features/explain/data/explain_repository_impl.dart';
 import 'package:walletops_mobile/features/explain/presentation/cubit/explain_cubit.dart';
 import 'package:walletops_mobile/features/explain/presentation/cubit/explain_state.dart';
 
@@ -24,7 +24,7 @@ void main() {
       baseUrl: base,
       onSessionExpired: () {},
     );
-    final auth = AuthRepository(api: api.authApi, storage: storage);
+    final auth = AuthRepositoryImpl(api: api.authApi, storage: storage);
     final stamp = DateTime.now().microsecondsSinceEpoch;
     final email = 'explain-$stamp@walletops.local';
     final userRef = 'explain-ref-$stamp';
@@ -79,7 +79,7 @@ void main() {
     expect(res.statusCode, anyOf(200, 202), reason: resBody);
     final eventId = jsonDecode(resBody)['id'] as String;
 
-    final cubit = ExplainCubit(ExplainRepository(AiApi(api.dio)));
+    final cubit = ExplainCubit(ExplainRepositoryImpl(AiApi(api.dio)));
     await cubit.load([eventId]);
     expect(cubit.state.status, ExplainStatus.ready);
     expect(cubit.state.summary?.title, isNotEmpty);

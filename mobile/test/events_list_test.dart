@@ -61,8 +61,9 @@ void main() {
 
     expect(find.text('balance_drop'), findsOneWidget);
     expect(find.text('swap_quote'), findsOneWidget);
-    expect(find.text('evt_fixture_balance'), findsOneWidget);
-    expect(find.text('evt_fixture_swap'), findsOneWidget);
+    expect(find.textContaining('evt_fixture_balance'), findsOneWidget);
+    expect(find.textContaining('evt_fixture_swap'), findsOneWidget);
+    expect(find.textContaining('120.5 USDC'), findsOneWidget);
     expect(find.byType(StatusChip), findsNWidgets(2));
     expect(find.text('processed'), findsOneWidget);
     expect(find.text('pending'), findsOneWidget);

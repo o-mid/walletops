@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/auth_repository.dart';
+import '../../../../core/error/error_mapper.dart';
+import '../../domain/auth_repository.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -32,7 +32,7 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           busy: false,
           status: AuthStatus.unauthenticated,
-          errorMessage: _message(e),
+          errorMessage: mapError(e).message,
         ),
       );
     }
@@ -51,7 +51,7 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           busy: false,
           status: AuthStatus.unauthenticated,
-          errorMessage: _message(e),
+          errorMessage: mapError(e).message,
         ),
       );
     }
@@ -66,19 +66,5 @@ class AuthCubit extends Cubit<AuthState> {
     if (state.status != AuthStatus.unauthenticated) {
       emit(const AuthState(status: AuthStatus.unauthenticated));
     }
-  }
-
-  String _message(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['error'] is Map) {
-        final msg = data['error']['message'];
-        if (msg is String && msg.isNotEmpty) {
-          return msg;
-        }
-      }
-      return 'Request failed';
-    }
-    return 'Something went wrong';
   }
 }

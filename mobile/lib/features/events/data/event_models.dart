@@ -50,6 +50,42 @@ class OpsEvent extends Equatable {
   String get prettyPayload =>
       const JsonEncoder.withIndent('  ').convert(payload);
 
+  String? get asset => payload['asset']?.toString();
+
+  double? get amount {
+    final raw = payload['amount'];
+    if (raw is num) {
+      return raw.toDouble();
+    }
+    return null;
+  }
+
+  String? get addressLabel => payload['address_label']?.toString();
+
+  String get listSubtitle {
+    final parts = <String>[];
+    if (amount != null && asset != null) {
+      parts.add('$amount $asset');
+    } else if (asset != null) {
+      parts.add(asset!);
+    }
+    if (addressLabel != null) {
+      parts.add(addressLabel!);
+    }
+    parts.add(pipelineHint);
+    return parts.join(' · ');
+  }
+
+  String get pipelineHint => switch (status) {
+        'pending' => 'queued for worker',
+        'processing' => 'claimed by worker',
+        'processed' => matchedRuleId != null
+            ? 'done · rule matched'
+            : 'done · no rule match',
+        'failed' => 'failed · attempt $attemptCount',
+        _ => status,
+      };
+
   @override
   List<Object?> get props => [id, status, type, receivedAt];
 }

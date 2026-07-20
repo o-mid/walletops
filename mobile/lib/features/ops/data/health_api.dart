@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/network/request_options.dart';
 import 'health_models.dart';
 
 class HealthApi {
@@ -8,7 +9,10 @@ class HealthApi {
   final Dio _dio;
 
   Future<OpsHealth> fetch() async {
-    final res = await _dio.get<Map<String, dynamic>>('/v1/health');
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/v1/health',
+      options: skipAuthOptions(),
+    );
     return OpsHealth.fromJson(res.data ?? const {});
   }
 }

@@ -4,11 +4,19 @@ import 'package:walletops_mobile/app.dart';
 import 'package:walletops_mobile/core/di/injection.dart';
 import 'package:walletops_mobile/core/router/app_router.dart';
 import 'package:walletops_mobile/core/storage/token_storage.dart';
-import 'package:walletops_mobile/features/auth/data/auth_repository.dart';
+import 'package:walletops_mobile/features/auth/domain/auth_repository.dart';
 import 'package:walletops_mobile/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:walletops_mobile/features/auth/presentation/login_page.dart';
+import 'package:walletops_mobile/features/ops/data/health_models.dart';
+import 'package:walletops_mobile/features/ops/domain/ops_repository.dart';
+import 'package:walletops_mobile/features/ops/presentation/cubit/ops_health_cubit.dart';
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
+
+class _FakeOpsRepository implements OpsRepository {
+  @override
+  Future<OpsHealth> fetchHealth() async => const OpsHealth(status: 'ok');
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +33,8 @@ void main() {
     getIt.registerSingleton<TokenStorage>(InMemoryTokenStorage());
     getIt.registerSingleton<AuthRepository>(repo);
     getIt.registerSingleton<AuthCubit>(cubit);
+    getIt.registerLazySingleton<OpsRepository>(_FakeOpsRepository.new);
+    getIt.registerLazySingleton(() => OpsHealthCubit(getIt<OpsRepository>()));
   });
 
   tearDown(() async {

@@ -1,16 +1,24 @@
 import 'package:get_it/get_it.dart';
 
-import '../../features/auth/data/auth_repository.dart';
+import '../../features/auth/data/auth_repository_impl.dart';
+import '../../features/auth/domain/auth_repository.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/events/data/events_api.dart';
-import '../../features/events/data/events_repository.dart';
+import '../../features/events/data/events_repository_impl.dart';
+import '../../features/events/domain/events_repository.dart';
 import '../../features/events/presentation/cubit/event_detail_cubit.dart';
 import '../../features/events/presentation/cubit/events_cubit.dart';
 import '../../features/explain/data/ai_api.dart';
-import '../../features/explain/data/explain_repository.dart';
+import '../../features/explain/data/explain_repository_impl.dart';
+import '../../features/explain/domain/explain_repository.dart';
 import '../../features/explain/presentation/cubit/explain_cubit.dart';
+import '../../features/ops/data/health_api.dart';
+import '../../features/ops/data/ops_repository_impl.dart';
+import '../../features/ops/domain/ops_repository.dart';
+import '../../features/ops/presentation/cubit/ops_health_cubit.dart';
 import '../../features/rules/data/rules_api.dart';
-import '../../features/rules/data/rules_repository.dart';
+import '../../features/rules/data/rules_repository_impl.dart';
+import '../../features/rules/domain/rules_repository.dart';
 import '../../features/rules/presentation/cubit/rules_cubit.dart';
 import '../network/api_client.dart';
 import '../storage/token_storage.dart';
@@ -36,22 +44,26 @@ Future<void> configureDependencies({
   );
   getIt.registerSingleton<ApiClient>(api);
 
-  final authRepo = AuthRepository(api: api.authApi, storage: storage);
+  final authRepo = AuthRepositoryImpl(api: api.authApi, storage: storage);
   getIt.registerSingleton<AuthRepository>(authRepo);
 
   authCubit = AuthCubit(authRepo);
   getIt.registerSingleton<AuthCubit>(authCubit);
 
-  final eventsRepo = EventsRepository(EventsApi(api.dio));
+  final eventsRepo = EventsRepositoryImpl(EventsApi(api.dio));
   getIt.registerSingleton<EventsRepository>(eventsRepo);
   getIt.registerFactory(() => EventsCubit(eventsRepo));
   getIt.registerFactory(() => EventDetailCubit(eventsRepo));
 
-  final rulesRepo = RulesRepository(RulesApi(api.dio));
+  final rulesRepo = RulesRepositoryImpl(RulesApi(api.dio));
   getIt.registerSingleton<RulesRepository>(rulesRepo);
   getIt.registerFactory(() => RulesCubit(rulesRepo));
 
-  final explainRepo = ExplainRepository(AiApi(api.dio));
+  final explainRepo = ExplainRepositoryImpl(AiApi(api.dio));
   getIt.registerSingleton<ExplainRepository>(explainRepo);
   getIt.registerFactory(() => ExplainCubit(explainRepo));
+
+  final opsRepo = OpsRepositoryImpl(HealthApi(api.dio));
+  getIt.registerSingleton<OpsRepository>(opsRepo);
+  getIt.registerLazySingleton(() => OpsHealthCubit(opsRepo));
 }

@@ -68,10 +68,17 @@ Default lease: 45s (`events.ClaimLease`). Health exposes queue counts via `GET /
 
 ## Packages (mobile)
 
+Feature-first layout (`data` / `domain` / `presentation`):
+
 | Path | Role |
 |------|------|
-| `features/auth` | Session, login/register, secure tokens |
-| `features/events` | List/detail, status chips |
-| `features/rules` | List/create/edit |
-| `features/explain` | Call summarize, render schema UI |
-| `core/` | Dio, GetIt, go_router, theme |
+| `features/*/domain` | Repository contracts |
+| `features/*/data` | Dio APIs + `*RepositoryImpl` (`guardApi` maps errors) |
+| `features/*/presentation` | Cubits + pages (no Dio / no getIt in widgets) |
+| `features/shell` | Authenticated chrome + indexed tab shell |
+| `features/ops` | `OpsHealthCubit` polls `/v1/health` with `skipAuth` |
+| `core/error` | `AppException` + Dio → domain mapping |
+| `core/network` | Shared Dio client + auth interceptor |
+| `core/di` | GetIt composition root |
+
+State scope: app (`AuthCubit`, `OpsHealthCubit`) → shell (`EventsCubit`, `RulesCubit`, survive tabs) → route (detail / explain).

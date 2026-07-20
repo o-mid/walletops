@@ -17,6 +17,7 @@ import '../../features/explain/presentation/explain_page.dart';
 import '../../features/rules/presentation/cubit/rules_cubit.dart';
 import '../../features/rules/presentation/rules_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
+import '../../features/shell/presentation/app_shell.dart';
 import '../di/injection.dart';
 
 GoRouter createAppRouter(AuthCubit authCubit) {
@@ -48,12 +49,42 @@ GoRouter createAppRouter(AuthCubit authCubit) {
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
-      GoRoute(
-        path: '/events',
-        builder: (context, state) => BlocProvider(
-          create: (_) => getIt<EventsCubit>()..load(),
-          child: const EventsPage(),
-        ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => getIt<EventsCubit>()..load(),
+              ),
+              BlocProvider(
+                create: (_) => getIt<RulesCubit>()..load(),
+              ),
+            ],
+            child: AppShell(navigationShell: navigationShell),
+          );
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/events',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: EventsPage(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/rules',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: RulesPage(),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/events/:id',
@@ -79,13 +110,6 @@ GoRouter createAppRouter(AuthCubit authCubit) {
             child: ExplainPage(eventIds: ids),
           );
         },
-      ),
-      GoRoute(
-        path: '/rules',
-        builder: (context, state) => BlocProvider(
-          create: (_) => getIt<RulesCubit>()..load(),
-          child: const RulesPage(),
-        ),
       ),
       GoRoute(
         path: '/settings',

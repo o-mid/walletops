@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -18,7 +17,16 @@ class RulesPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rules')),
+      appBar: AppBar(
+        title: const Text('Rules'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: () => context.read<RulesCubit>().refresh(),
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showRuleFormSheet(context),
         tooltip: 'New rule',
@@ -45,7 +53,9 @@ class RulesPage extends StatelessWidget {
                       height: MediaQuery.sizeOf(context).height * 0.55,
                       child: EmptyState(
                         title: 'No alert rules yet',
-                        message: 'Create a rule to match incoming events.',
+                        message:
+                            'Rules run in the Go worker after claim.\n'
+                            'Seed creates “Demo balance watch” (balance_drop ≤ 150).',
                         icon: Icons.rule_outlined,
                         actionLabel: 'New rule',
                         onAction: () => showRuleFormSheet(context),
@@ -83,6 +93,7 @@ class RulesPage extends StatelessWidget {
                         rule.eventType,
                         if (rule.threshold != null) '≤ ${rule.threshold}',
                         rule.enabled ? 'enabled' : 'disabled',
+                        'matched by worker',
                       ].join(' · '),
                       onTap: () => showRuleFormSheet(context, existing: rule),
                       trailing: IconButton(
@@ -101,7 +112,6 @@ class RulesPage extends StatelessWidget {
           };
         },
       ),
-      bottomNavigationBar: const AppBottomNav(selectedIndex: 1),
     );
   }
 }

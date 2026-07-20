@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/events_repository.dart';
+import '../../../../core/error/error_mapper.dart';
+import '../../domain/events_repository.dart';
 import 'event_detail_state.dart';
 
 class EventDetailCubit extends Cubit<EventDetailState> {
@@ -18,7 +18,7 @@ class EventDetailCubit extends Cubit<EventDetailState> {
       emit(
         state.copyWith(
           status: EventDetailStatus.error,
-          errorMessage: e is DioException ? 'Event not found' : 'Load failed',
+          errorMessage: mapError(e).message,
         ),
       );
     }

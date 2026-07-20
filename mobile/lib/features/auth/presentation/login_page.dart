@@ -69,10 +69,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Sign in to watch HMAC webhooks land, the worker claim '
-                          'them, and rules match — all against a local API.',
+                          'Sign in, then run the guided demo on Events to watch '
+                          'webhooks move through the queue — HMAC ingest, worker '
+                          'claim, rule match — against your local API.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
+                            height: 1.45,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),

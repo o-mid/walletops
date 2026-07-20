@@ -14,6 +14,9 @@ class EventsCubit extends Cubit<EventsState> {
   final DemoRepository _demo;
   Timer? _liveTimer;
 
+  static const _betweenEventsPause = Duration(seconds: 3);
+  static const _terminalWait = Duration(seconds: 40);
+
   Future<void> load({String? status, bool updateFilter = false}) async {
     final filter = updateFilter ? status : (status ?? state.filter);
     final quiet = state.liveWatching || state.demoBusy;
@@ -65,7 +68,7 @@ class EventsCubit extends Cubit<EventsState> {
       load(status: status, updateFilter: true);
 
   void startLiveWatch() {
-    if (state.liveWatching) {
+    if (state.liveWatching && _liveTimer != null) {
       return;
     }
     emit(state.copyWith(liveWatching: true));
@@ -94,7 +97,6 @@ class EventsCubit extends Cubit<EventsState> {
     }
   }
 
-  /// Injects events one-by-one so the user can watch PENDING → PROCESSING → PROCESSED.
   Future<void> runGuidedDemo({int eventCount = 3}) async {
     if (state.demoBusy) {
       return;
@@ -103,6 +105,8 @@ class EventsCubit extends Cubit<EventsState> {
       state.copyWith(
         demoBusy: true,
         liveWatching: true,
+        demoStep: 0,
+        demoTotal: eventCount,
         journeyMessage: 'Preparing demo rule and live refresh…',
         clearError: true,
       ),
@@ -113,8 +117,9 @@ class EventsCubit extends Cubit<EventsState> {
       for (var i = 0; i < eventCount; i++) {
         emit(
           state.copyWith(
+            demoStep: i,
             journeyMessage:
-                'Injecting webhook ${i + 1} of $eventCount as PENDING…',
+                'Step ${i + 1}/$eventCount — injecting webhook as PENDING…',
           ),
         );
         final result = await _demo.simulate(
@@ -127,24 +132,38 @@ class EventsCubit extends Cubit<EventsState> {
             : '';
         emit(
           state.copyWith(
+            demoStep: i,
             journeyMessage: created == null
                 ? 'Webhook ${i + 1} sent.$ruleNote'
-                : 'Webhook ${i + 1}: ${created.type} is ${created.status.toUpperCase()}.$ruleNote '
-                    'Watch status move to PROCESSING then PROCESSED.',
+                : 'Step ${i + 1}/$eventCount — ${created.type} is '
+                    '${created.status.toUpperCase()}.$ruleNote '
+                    'Watch PENDING → PROCESSING → PROCESSED.',
           ),
         );
         await load();
         if (created != null) {
-          await _waitUntilTerminal(created.id);
+          await _waitUntilTerminal(created.id, step: i + 1, total: eventCount);
         } else {
-          await Future<void>.delayed(const Duration(seconds: 5));
+          await Future<void>.delayed(const Duration(seconds: 8));
+        }
+        if (i < eventCount - 1) {
+          emit(
+            state.copyWith(
+              demoStep: i + 1,
+              journeyMessage:
+                  'Step ${i + 1}/$eventCount done. Pausing before the next webhook…',
+            ),
+          );
+          await Future<void>.delayed(_betweenEventsPause);
         }
       }
       emit(
         state.copyWith(
           demoBusy: false,
+          demoStep: eventCount,
+          demoTotal: eventCount,
           journeyMessage:
-              'Demo complete. Open a PROCESSED event for the pipeline steps, then Explain.',
+              'Demo complete. Open a PROCESSED event for pipeline detail, then Explain.',
         ),
       );
       await load();
@@ -153,6 +172,8 @@ class EventsCubit extends Cubit<EventsState> {
       emit(
         state.copyWith(
           demoBusy: false,
+          demoStep: 0,
+          demoTotal: 0,
           errorMessage: mapError(e).message,
           clearJourney: true,
         ),
@@ -161,23 +182,36 @@ class EventsCubit extends Cubit<EventsState> {
     }
   }
 
-  Future<void> _waitUntilTerminal(String eventId) async {
-    final deadline = DateTime.now().add(const Duration(seconds: 20));
+  Future<void> _waitUntilTerminal(
+    String eventId, {
+    required int step,
+    required int total,
+  }) async {
+    final deadline = DateTime.now().add(_terminalWait);
     while (DateTime.now().isBefore(deadline) && !isClosed) {
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      await Future<void>.delayed(const Duration(milliseconds: 900));
       await load();
       final match = state.items.where((e) => e.id == eventId);
       if (match.isEmpty) {
         continue;
       }
-      final status = match.first.status;
+      final current = match.first;
+      final status = current.status;
       if (status == 'processed' || status == 'failed') {
+        emit(
+          state.copyWith(
+            demoStep: step,
+            journeyMessage:
+                'Step $step/$total — ${current.type} finished as ${status.toUpperCase()}.',
+          ),
+        );
         return;
       }
       emit(
         state.copyWith(
           journeyMessage:
-              'Live: ${match.first.type} is ${status.toUpperCase()} — worker claim / rule match in progress…',
+              'Step $step/$total — ${current.type} is ${status.toUpperCase()} '
+              '(worker claim / rule match in progress)…',
         ),
       );
     }

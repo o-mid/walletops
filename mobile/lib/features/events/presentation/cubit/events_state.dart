@@ -13,6 +13,8 @@ class EventsState extends Equatable {
     this.liveWatching = false,
     this.demoBusy = false,
     this.journeyMessage,
+    this.demoStep = 0,
+    this.demoTotal = 0,
   });
 
   final EventsStatus status;
@@ -22,9 +24,18 @@ class EventsState extends Equatable {
   final bool liveWatching;
   final bool demoBusy;
   final String? journeyMessage;
+  final int demoStep;
+  final int demoTotal;
 
   bool get hasActiveQueue =>
       items.any((e) => e.status == 'pending' || e.status == 'processing');
+
+  double get demoProgress {
+    if (demoTotal <= 0) {
+      return 0;
+    }
+    return (demoStep / demoTotal).clamp(0.0, 1.0);
+  }
 
   EventsState copyWith({
     EventsStatus? status,
@@ -34,6 +45,8 @@ class EventsState extends Equatable {
     bool? liveWatching,
     bool? demoBusy,
     String? journeyMessage,
+    int? demoStep,
+    int? demoTotal,
     bool clearFilter = false,
     bool clearError = false,
     bool clearJourney = false,
@@ -47,6 +60,8 @@ class EventsState extends Equatable {
       demoBusy: demoBusy ?? this.demoBusy,
       journeyMessage:
           clearJourney ? null : (journeyMessage ?? this.journeyMessage),
+      demoStep: demoStep ?? this.demoStep,
+      demoTotal: demoTotal ?? this.demoTotal,
     );
   }
 
@@ -59,5 +74,7 @@ class EventsState extends Equatable {
         liveWatching,
         demoBusy,
         journeyMessage,
+        demoStep,
+        demoTotal,
       ];
 }

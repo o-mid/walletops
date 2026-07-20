@@ -35,8 +35,7 @@ class StatusChip extends StatelessWidget {
         status.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: fg,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'monospace',
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.6,
             ),
       ),

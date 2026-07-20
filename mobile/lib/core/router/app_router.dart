@@ -22,7 +22,7 @@ import '../di/injection.dart';
 
 GoRouter createAppRouter(AuthCubit authCubit) {
   return GoRouter(
-    initialLocation: '/events',
+    initialLocation: '/login',
     refreshListenable: GoRouterRefreshStream(authCubit.stream),
     redirect: (context, state) {
       final status = authCubit.state.status;
@@ -30,7 +30,7 @@ GoRouter createAppRouter(AuthCubit authCubit) {
           state.matchedLocation == '/register';
 
       if (status == AuthStatus.unknown) {
-        return null;
+        return loggingIn ? null : '/login';
       }
       if (status == AuthStatus.unauthenticated) {
         return loggingIn ? null : '/login';

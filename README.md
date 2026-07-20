@@ -64,12 +64,18 @@ curl -s http://127.0.0.1:8080/v1/health
 
 # 4) Mobile
 cd mobile
-flutter pub get
-flutter run --dart-define=API_BASE=http://127.0.0.1:8080
+fvm flutter pub get
+# Simulator / desktop (API on this machine):
+fvm flutter run --dart-define=API_BASE=http://127.0.0.1:8080
+# Physical iPhone/Android on the same Wi‑Fi — use your Mac LAN IP, not 127.0.0.1:
+#   ipconfig getifaddr en0
+# fvm flutter run --dart-define=API_BASE=http://192.168.x.x:8080
 # Android emulator: API_BASE=http://10.0.2.2:8080
 ```
 
 In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → Events (status → processed) → open an event → **Explain** (mock AI by default).
+
+If iOS install crashes at launch after a Podfile change: `cd mobile/ios && pod install && cd ..` then `fvm flutter clean && fvm flutter run ...`. Clear a stale signing cert with `flutter config --clear-ios-signing-settings`.
 
 ## Tests
 

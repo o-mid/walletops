@@ -46,6 +46,18 @@ class _LoginPageState extends State<LoginPage> {
                   }
                 },
                 builder: (context, state) {
+                  if (state.status == AuthStatus.unknown) {
+                    return const Column(
+                      children: [
+                        SizedBox(height: AppSpacing.xxl),
+                        BrandMark(
+                          subtitle: 'Starting ops console…',
+                        ),
+                        SizedBox(height: AppSpacing.xl),
+                        Center(child: CircularProgressIndicator()),
+                      ],
+                    );
+                  }
                   return Form(
                     key: _formKey,
                     child: Column(

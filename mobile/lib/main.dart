@@ -11,10 +11,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await configureDependencies();
   final authCubit = getIt<AuthCubit>();
+  final router = createAppRouter(authCubit);
+  runApp(WalletOpsApp(authCubit: authCubit, router: router));
   await authCubit.bootstrap();
   if (authCubit.state.status == AuthStatus.authenticated) {
     getIt<OpsHealthCubit>().start();
   }
-  final router = createAppRouter(authCubit);
-  runApp(WalletOpsApp(authCubit: authCubit, router: router));
 }

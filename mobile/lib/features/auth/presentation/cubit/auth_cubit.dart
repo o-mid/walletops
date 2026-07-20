@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/error_mapper.dart';
@@ -11,12 +13,16 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> bootstrap() async {
     emit(state.copyWith(busy: true, clearError: true));
-    final user = await _repo.restore();
-    if (user == null) {
+    try {
+      final user = await _repo.restore().timeout(const Duration(seconds: 6));
+      if (user == null) {
+        emit(const AuthState(status: AuthStatus.unauthenticated));
+        return;
+      }
+      emit(AuthState(status: AuthStatus.authenticated, user: user));
+    } catch (_) {
       emit(const AuthState(status: AuthStatus.unauthenticated));
-      return;
     }
-    emit(AuthState(status: AuthStatus.authenticated, user: user));
   }
 
   Future<void> register({

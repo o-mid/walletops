@@ -16,6 +16,7 @@ import (
 	"github.com/omid/walletops/api/internal/auth"
 	"github.com/omid/walletops/api/internal/config"
 	"github.com/omid/walletops/api/internal/db"
+	"github.com/omid/walletops/api/internal/demo"
 	"github.com/omid/walletops/api/internal/events"
 	"github.com/omid/walletops/api/internal/httpapi"
 	"github.com/omid/walletops/api/internal/rules"
@@ -66,7 +67,11 @@ func main() {
 		os.Exit(1)
 	}
 	aiHandler := ai.NewHandler(eventStore, rulesStore, ai.NewStore(pool), aiProvider)
-	wrk := worker.New(eventStore, rulesStore, log)
+	demoHandler := demo.NewHandler(eventStore, rulesStore)
+	wrk := worker.NewWithDelay(eventStore, rulesStore, log, cfg.DemoProcessDelay)
+	if cfg.DemoProcessDelay > 0 {
+		log.Info("demo process delay enabled", "delay", cfg.DemoProcessDelay.String())
+	}
 	go wrk.Run(ctx)
 	requireAuth := auth.RequireAuth(tokens, func(w http.ResponseWriter, code, msg string) {
 		httpapi.WriteError(w, http.StatusUnauthorized, code, msg)
@@ -97,6 +102,7 @@ func main() {
 	mux.HandleFunc("POST /v1/webhooks/events", webhookHandler.Ingest)
 	mux.Handle("GET /v1/events", requireAuth(http.HandlerFunc(eventsHandler.List)))
 	mux.Handle("GET /v1/events/{id}", requireAuth(http.HandlerFunc(eventsHandler.Get)))
+	mux.Handle("POST /v1/demo/simulate", requireAuth(http.HandlerFunc(demoHandler.Simulate)))
 	mux.Handle("POST /v1/ai/summarize", requireAuth(http.HandlerFunc(aiHandler.Summarize)))
 
 

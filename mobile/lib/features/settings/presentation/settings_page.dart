@@ -67,11 +67,14 @@ class SettingsPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Text(
-              '1) docker compose up --build -d\n'
-              '2) ./scripts/seed_webhooks.sh\n'
-              '3) Sign in with the demo account\n'
-              '4) Watch Events status move pending → processed\n'
-              '5) Open an event for the backend pipeline + Explain',
+              'In-app demo (recommended)\n'
+              '1) Keep docker compose up on your Mac\n'
+              '2) Sign in with the demo account\n'
+              '3) Events → “Run live demo” → confirm\n'
+              '4) Watch each webhook: PENDING → PROCESSING → PROCESSED\n'
+              '5) Open an event for pipeline steps → Explain\n\n'
+              'Optional Mac seed (instant, often already PROCESSED):\n'
+              './scripts/seed_webhooks.sh',
               style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
             ),
           ),

@@ -3,28 +3,32 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
-	DatabaseURL   string
-	JWTSecret     string
-	WebhookSecret string
-	AIProvider    string
-	AIAPIKey      string
-	AIBaseURL     string
-	HTTPAddr      string
+	DatabaseURL       string
+	JWTSecret         string
+	WebhookSecret     string
+	AIProvider        string
+	AIAPIKey          string
+	AIBaseURL         string
+	HTTPAddr          string
+	DemoProcessDelay  time.Duration
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		DatabaseURL:   os.Getenv("DATABASE_URL"),
-		JWTSecret:     os.Getenv("JWT_SECRET"),
-		WebhookSecret: os.Getenv("WEBHOOK_SECRET"),
-		AIProvider:    getenv("AI_PROVIDER", "mock"),
-		AIAPIKey:      os.Getenv("AI_API_KEY"),
-		AIBaseURL:     os.Getenv("AI_BASE_URL"),
-		HTTPAddr:      getenv("HTTP_ADDR", ":8080"),
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		JWTSecret:        os.Getenv("JWT_SECRET"),
+		WebhookSecret:    os.Getenv("WEBHOOK_SECRET"),
+		AIProvider:       getenv("AI_PROVIDER", "mock"),
+		AIAPIKey:         os.Getenv("AI_API_KEY"),
+		AIBaseURL:        os.Getenv("AI_BASE_URL"),
+		HTTPAddr:         getenv("HTTP_ADDR", ":8080"),
+		DemoProcessDelay: parseDurationMS("DEMO_PROCESS_DELAY_MS", 0),
 	}
 
 	var missing []string
@@ -48,4 +52,16 @@ func getenv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parseDurationMS(key string, fallbackMS int) time.Duration {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return time.Duration(fallbackMS) * time.Millisecond
+	}
+	ms, err := strconv.Atoi(raw)
+	if err != nil || ms < 0 {
+		return time.Duration(fallbackMS) * time.Millisecond
+	}
+	return time.Duration(ms) * time.Millisecond
 }

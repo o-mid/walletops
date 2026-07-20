@@ -73,7 +73,9 @@ fvm flutter run --dart-define=API_BASE=http://127.0.0.1:8080
 # Android emulator: API_BASE=http://10.0.2.2:8080
 ```
 
-In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → Events (status → processed) → open an event → **Explain** (mock AI by default).
+In the app: sign in as `demo-user-1@walletops.local` / `ops-secret-1` → **Events → Run live demo → confirm**. Watch each webhook move **PENDING → PROCESSING → PROCESSED** (compose sets a short demo worker delay). Open an event for pipeline steps → **Explain**.
+
+`POST /v1/demo/simulate` (auth) inserts fresh pending events for the journey; partner HMAC ingest remains `POST /v1/webhooks/events`.
 
 If iOS install crashes at launch after a Podfile change: `cd mobile/ios && pod install && cd ..` then `fvm flutter clean && fvm flutter run ...`. Clear a stale signing cert with `flutter config --clear-ios-signing-settings`.
 

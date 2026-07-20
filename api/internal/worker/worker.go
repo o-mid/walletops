@@ -19,23 +19,29 @@ const (
 )
 
 type Worker struct {
-	events *events.Store
-	rules  *rules.Store
-	log    *slog.Logger
-	Stats  *Stats
-	every  time.Duration
+	events       *events.Store
+	rules        *rules.Store
+	log          *slog.Logger
+	Stats        *Stats
+	every        time.Duration
+	processDelay time.Duration
 }
 
 func New(eventsStore *events.Store, rulesStore *rules.Store, log *slog.Logger) *Worker {
+	return NewWithDelay(eventsStore, rulesStore, log, 0)
+}
+
+func NewWithDelay(eventsStore *events.Store, rulesStore *rules.Store, log *slog.Logger, processDelay time.Duration) *Worker {
 	if log == nil {
 		log = slog.Default()
 	}
 	return &Worker{
-		events: eventsStore,
-		rules:  rulesStore,
-		log:    log,
-		Stats:  &Stats{},
-		every:  PollEvery,
+		events:       eventsStore,
+		rules:        rulesStore,
+		log:          log,
+		Stats:        &Stats{},
+		every:        PollEvery,
+		processDelay: processDelay,
 	}
 }
 
@@ -77,6 +83,15 @@ func (w *Worker) ProcessOne(ctx context.Context) (ok bool, err error) {
 	}
 	if err != nil {
 		return false, err
+	}
+	if w.processDelay > 0 {
+		timer := time.NewTimer(w.processDelay)
+		defer timer.Stop()
+		select {
+		case <-ctx.Done():
+			return true, ctx.Err()
+		case <-timer.C:
+		}
 	}
 	return true, w.Finish(ctx, ev)
 }

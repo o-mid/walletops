@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:walletops_mobile/core/network/api_client.dart';
 import 'package:walletops_mobile/core/storage/token_storage.dart';
 import 'package:walletops_mobile/features/auth/data/auth_repository_impl.dart';
+import 'package:walletops_mobile/features/demo/data/demo_api.dart';
+import 'package:walletops_mobile/features/demo/data/demo_repository_impl.dart';
 import 'package:walletops_mobile/features/events/data/events_api.dart';
 import 'package:walletops_mobile/features/events/data/events_repository_impl.dart';
 import 'package:walletops_mobile/features/events/presentation/cubit/event_detail_cubit.dart';
@@ -54,7 +56,10 @@ void main() {
       isTrue,
     );
 
-    final eventsCubit = EventsCubit(EventsRepositoryImpl(EventsApi(api.dio)));
+    final eventsCubit = EventsCubit(
+      EventsRepositoryImpl(EventsApi(api.dio)),
+      DemoRepositoryImpl(DemoApi(api.dio)),
+    );
     await eventsCubit.load();
     expect(
       eventsCubit.state.status == EventsStatus.empty ||

@@ -76,31 +76,68 @@ class _DetailBody extends StatelessWidget {
             ),
           ),
         ],
+        if (event.status == 'pending' || event.status == 'processing') ...[
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: scheme.tertiaryContainer.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            ),
+            child: Text(
+              event.status == 'pending'
+                  ? 'Live: waiting in the PENDING queue for the worker '
+                      '(FOR UPDATE SKIP LOCKED). This screen auto-refreshes.'
+                  : 'Live: worker claimed this row (PROCESSING). Demo builds hold '
+                      'the claim briefly so you can see this step.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onTertiaryContainer,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
         Text('Backend pipeline', style: theme.textTheme.titleMedium),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'What the Go API and worker did with this webhook.',
+          'Each step is what the Go API and in-process worker did after the '
+          'partner webhook was accepted.',
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: AppSpacing.sm),
         _PipelineCard(event: event),
         const SizedBox(height: AppSpacing.lg),
-        Text('Identifiers', style: theme.textTheme.titleMedium),
+        Text('Identifiers & timing', style: theme.textTheme.titleMedium),
         const SizedBox(height: AppSpacing.sm),
         _MetaBlock(
           children: [
             _MetaLine(label: 'Event id', value: event.id),
             _MetaLine(label: 'Idempotency key', value: event.idempotencyKey),
+            _MetaLine(
+              label: 'Why idempotency matters',
+              value:
+                  'Replays with the same key return this row (HTTP 200) instead of a duplicate.',
+            ),
             _MetaLine(label: 'Attempt count', value: '${event.attemptCount}'),
             _MetaLine(label: 'Received', value: _fmt(event.receivedAt)),
-            if (event.processedAt != null)
+            if (event.processedAt != null) ...[
               _MetaLine(
                 label: 'Processed / last transition',
                 value: _fmt(event.processedAt!),
               ),
+              _MetaLine(
+                label: 'Pipeline latency',
+                value: _latency(event.receivedAt, event.processedAt!),
+              ),
+            ],
             if (event.matchedRuleId != null)
               _MetaLine(label: 'Matched rule id', value: event.matchedRuleId!),
+            _MetaLine(
+              label: 'Current meaning',
+              value: event.pipelineHint,
+            ),
           ],
         ),
         if (event.lastError != null) ...[
@@ -174,6 +211,14 @@ class _DetailBody extends StatelessWidget {
     final local = value.toLocal();
     return '${local.toIso8601String().replaceFirst('T', ' ').split('.').first} '
         '(local)';
+  }
+
+  String _latency(DateTime start, DateTime end) {
+    final ms = end.toUtc().difference(start.toUtc()).inMilliseconds;
+    if (ms < 1000) {
+      return '$ms ms (received → processed)';
+    }
+    return '${(ms / 1000).toStringAsFixed(1)} s (received → processed)';
   }
 }
 

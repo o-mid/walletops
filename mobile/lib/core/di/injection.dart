@@ -3,6 +3,9 @@ import 'package:get_it/get_it.dart';
 import '../../features/auth/data/auth_repository_impl.dart';
 import '../../features/auth/domain/auth_repository.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/demo/data/demo_api.dart';
+import '../../features/demo/data/demo_repository_impl.dart';
+import '../../features/demo/domain/demo_repository.dart';
 import '../../features/events/data/events_api.dart';
 import '../../features/events/data/events_repository_impl.dart';
 import '../../features/events/domain/events_repository.dart';
@@ -52,7 +55,9 @@ Future<void> configureDependencies({
 
   final eventsRepo = EventsRepositoryImpl(EventsApi(api.dio));
   getIt.registerSingleton<EventsRepository>(eventsRepo);
-  getIt.registerFactory(() => EventsCubit(eventsRepo));
+  final demoRepo = DemoRepositoryImpl(DemoApi(api.dio));
+  getIt.registerSingleton<DemoRepository>(demoRepo);
+  getIt.registerFactory(() => EventsCubit(eventsRepo, demoRepo));
   getIt.registerFactory(() => EventDetailCubit(eventsRepo));
 
   final rulesRepo = RulesRepositoryImpl(RulesApi(api.dio));

@@ -397,6 +397,4 @@ Target: **under 5 minutes** once env is set.
 
 - [`architecture.md`](./architecture.md)
 - [`threat-model.md`](./threat-model.md)
-- [`HUMAN_CODE_STANDARDS.md`](./HUMAN_CODE_STANDARDS.md)
-- [`GIT_WORKFLOW.md`](./GIT_WORKFLOW.md)
 

@@ -24,17 +24,20 @@ class StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xs,
-        vertical: AppSpacing.xxs,
+        vertical: 3,
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
       ),
       child: Text(
-        status,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+        status.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: fg,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'monospace',
+              letterSpacing: 0.6,
             ),
       ),
     );

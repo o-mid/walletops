@@ -67,19 +67,37 @@ class _LoginPageState extends State<LoginPage> {
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
-                            color: scheme.surface,
+                            color: scheme.surfaceContainerLow,
                             borderRadius:
-                                BorderRadius.circular(AppSpacing.radiusMd),
-                            border: Border.all(
-                              color:
-                                  scheme.outlineVariant.withValues(alpha: 0.7),
+                                BorderRadius.circular(AppSpacing.radiusSm),
+                            border: Border(
+                              left: BorderSide(
+                                color: scheme.primary,
+                                width: 3,
+                              ),
+                              top: BorderSide(
+                                color: scheme.outline.withValues(alpha: 0.7),
+                              ),
+                              right: BorderSide(
+                                color: scheme.outline.withValues(alpha: 0.7),
+                              ),
+                              bottom: BorderSide(
+                                color: scheme.outline.withValues(alpha: 0.7),
+                              ),
                             ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Demo account (prefilled)',
+                                'DEMO ACCOUNT',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: scheme.primary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xxs),
+                              Text(
+                                'Prefilled credentials',
                                 style: theme.textTheme.titleSmall,
                               ),
                               const SizedBox(height: AppSpacing.xxs),

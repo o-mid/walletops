@@ -6,7 +6,6 @@ import '../../data/health_models.dart';
 import '../cubit/ops_health_cubit.dart';
 import '../cubit/ops_health_state.dart';
 
-/// Live strip of API / worker / queue state. Driven by [OpsHealthCubit].
 class OpsStatusBar extends StatelessWidget {
   const OpsStatusBar({super.key});
 
@@ -21,46 +20,59 @@ class OpsStatusBar extends StatelessWidget {
 
         return Material(
           color: ok
-              ? scheme.primaryContainer.withValues(alpha: 0.45)
-              : scheme.errorContainer.withValues(alpha: 0.45),
+              ? scheme.surfaceContainerLow
+              : scheme.errorContainer.withValues(alpha: 0.55),
           child: InkWell(
             onTap: () => context.read<OpsHealthCubit>().refresh(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    ok ? Icons.dns_outlined : Icons.cloud_off_outlined,
-                    size: 18,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: scheme.outlineVariant),
+                  left: BorderSide(
                     color: ok ? scheme.primary : scheme.error,
+                    width: 3,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _headline(state),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: ok ? scheme.onSurface : scheme.error,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _detail(state, health),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      ok ? Icons.monitor_heart_outlined : Icons.cloud_off_outlined,
+                      size: 18,
+                      color: ok ? scheme.primary : scheme.error,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _headline(state),
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: ok ? scheme.onSurface : scheme.error,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _detail(state, health),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.35,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

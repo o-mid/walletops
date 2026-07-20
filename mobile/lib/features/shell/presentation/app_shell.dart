@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../ops/presentation/widgets/ops_status_bar.dart';
 
-/// Authenticated chrome: live ops strip + indexed tab shell.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
 
@@ -12,12 +11,15 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const OpsStatusBar(),
-          Expanded(child: navigationShell),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const OpsStatusBar(),
+            Expanded(child: navigationShell),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
@@ -29,13 +31,13 @@ class AppShell extends StatelessWidget {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.inbox_outlined),
-            selectedIcon: Icon(Icons.inbox),
+            icon: Icon(Icons.stream_outlined),
+            selectedIcon: Icon(Icons.stream),
             label: 'Events',
           ),
           NavigationDestination(
-            icon: Icon(Icons.rule_outlined),
-            selectedIcon: Icon(Icons.rule),
+            icon: Icon(Icons.tune_outlined),
+            selectedIcon: Icon(Icons.tune),
             label: 'Rules',
           ),
         ],

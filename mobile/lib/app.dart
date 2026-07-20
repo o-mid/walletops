@@ -39,7 +39,7 @@ class WalletOpsApp extends StatelessWidget {
           title: 'WalletOps',
           theme: buildAppTheme(),
           darkTheme: buildAppDarkTheme(),
-          themeMode: ThemeMode.system,
+          themeMode: ThemeMode.dark,
           routerConfig: router,
           debugShowCheckedModeBanner: false,
         ),

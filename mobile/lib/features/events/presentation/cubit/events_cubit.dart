@@ -14,8 +14,8 @@ class EventsCubit extends Cubit<EventsState> {
   final DemoRepository _demo;
   Timer? _liveTimer;
 
-  static const _betweenEventsPause = Duration(seconds: 3);
-  static const _terminalWait = Duration(seconds: 40);
+  static const _betweenEventsPause = Duration(milliseconds: 1500);
+  static const _terminalWait = Duration(seconds: 30);
 
   Future<void> load({String? status, bool updateFilter = false}) async {
     final filter = updateFilter ? status : (status ?? state.filter);

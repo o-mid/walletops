@@ -192,8 +192,8 @@ class EventsPage extends StatelessWidget {
               ),
               const _ConfirmStep(
                 index: '2',
-                title: 'Inject 3 webhooks slowly',
-                detail: '~8s processing hold + pause between each',
+                title: 'Inject 3 webhooks',
+                detail: '~5s processing hold + short pause between each',
               ),
               const _ConfirmStep(
                 index: '3',

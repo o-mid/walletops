@@ -24,51 +24,62 @@ class OpsStatusBar extends StatelessWidget {
               : scheme.errorContainer.withValues(alpha: 0.55),
           child: InkWell(
             onTap: () => context.read<OpsHealthCubit>().refresh(),
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: scheme.outlineVariant),
-                  left: BorderSide(
-                    color: ok ? scheme.primary : scheme.error,
-                    width: 3,
-                  ),
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
+              child: IntrinsicHeight(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      ok ? Icons.monitor_heart_outlined : Icons.cloud_off_outlined,
-                      size: 18,
+                    Container(
+                      width: 3,
                       color: ok ? scheme.primary : scheme.error,
                     ),
-                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _headline(state),
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: ok ? scheme.onSurface : scheme.error,
-                              fontFamily: 'monospace',
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              ok
+                                  ? Icons.monitor_heart_outlined
+                                  : Icons.cloud_off_outlined,
+                              size: 18,
+                              color: ok ? scheme.primary : scheme.error,
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _detail(state, health),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              height: 1.35,
-                              fontFamily: 'monospace',
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _headline(state),
+                                    style: theme.textTheme.labelLarge?.copyWith(
+                                      color: ok
+                                          ? scheme.onSurface
+                                          : scheme.error,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _detail(state, health),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
